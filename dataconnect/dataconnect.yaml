@@ -1,0 +1,12 @@
+specVersion: "v1beta"
+serviceId: "gunluk-uygulamasi"
+location: "asia-east1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "postgres"
+      cloudSql:
+        instanceId: "gunluk-uygulamasi-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]

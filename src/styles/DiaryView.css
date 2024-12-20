@@ -1,0 +1,68 @@
+/* DiaryView.css */
+.diary-view-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .diary-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .diary-view-header h1 {
+    font-size: 2rem;
+    color: #333;
+  }
+  
+  .back-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.2rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.3s ease;
+  }
+  
+  .back-button:hover {
+    background: #0056b3;
+  }
+  
+  .diary-content {
+    padding: 1rem 0;
+  }
+  
+  .diary-text {
+    white-space: pre-line;
+    line-height: 1.6;
+    color: #333;
+  }
+  
+  .file-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .file-list li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .file-list a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .file-list a:hover {
+    text-decoration: underline;
+  }
+  

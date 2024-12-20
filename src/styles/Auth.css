@@ -1,0 +1,85 @@
+/* Genel Stil */
+.auth-container {
+    max-width: 400px;
+    margin: 5% auto;
+    padding: 2rem;
+    background: #f9f9f9;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    text-align: center;
+  }
+  
+  h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  input {
+    margin: 0.5rem 0;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  button {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    font-size: 1rem;
+    color: white;
+    background: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background: #0056b3;
+  }
+  
+  .links {
+    margin-top: 1.5rem;
+  }
+  
+  .links a {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: inline-block;
+  }
+  
+  .links .spacer {
+    display: inline-block;
+    width: 2rem; /* Aradaki boşluk */
+  }
+  
+  .links a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Mobil Uyumluluk */
+  @media screen and (max-width: 600px) {
+    .auth-container {
+      width: 90%;
+      padding: 1.5rem;
+    }
+  
+    h2 {
+      font-size: 1.5rem;
+    }
+  
+    input {
+      padding: 0.6rem;
+    }
+  
+    button {
+      font-size: 0.9rem;
+    }
+  }
+  

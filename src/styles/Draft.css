@@ -1,0 +1,115 @@
+/* Taslaklar Sayfası */
+.drafts-container {
+    width: 80%;
+    max-width: 900px;
+    margin: 100px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .drafts-title {
+    font-size: 2rem;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Taslak Listesi */
+  .draft-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .draft-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .draft-card:hover {
+    background: #f0f0f0;
+  }
+  
+  .draft-info {
+    flex-grow: 1;
+  }
+  
+  .draft-title {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin: 0 0 5px;
+  }
+  
+  .draft-date {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  /* Taslak Eylem Butonları */
+  .draft-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .action-btn:hover {
+    background: #0056b3;
+  }
+  
+  .delete-btn {
+    background: red;
+  }
+  
+  .delete-btn:hover {
+    background: darkred;
+  }
+  
+  /* Tüm Taslakları Silme Butonu */
+  .clear-drafts-btn {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 20px auto 0;
+    padding: 10px 15px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .clear-drafts-btn:hover {
+    background: darkred;
+  }
+  
+  .no-drafts {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #666;
+  }
+  
