@@ -1,32 +1,42 @@
-# Dependencies
+# Bağımlılıklar
 /node_modules
+/.pnp
+.pnp.js
 
-# Build output
+# Derleme çıktısı
 /build
+/dist
 
-# Environment variables
+# Ortam değişkenleri (GİZLİ — asla commit etme)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Firebase configuration files
-.firebase
-.firebaserc
-firebase.json
-firestore.indexes.json
-firestore.rules
-storage.rules
+# Firebase yerel durum dosyaları
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+*-debug.log
 
-# Misc
+# NOT: firestore.rules, storage.rules, firebase.json ve firestore.indexes.json
+# BİLEREK commit edilir. Güvenlik kuralları koda dahildir ve versiyonlanmalıdır.
+
+# Test / cache
+/coverage
+.eslintcache
+
+# Editör & işletim sistemi
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
 
-# Log files
+# Log dosyaları
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# IDE specific files
-.vscode/
-.idea/
+pnpm-debug.log*

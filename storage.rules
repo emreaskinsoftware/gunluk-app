@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// ============================================================================
+//  Günlük Uygulaması — Cloud Storage Güvenlik Kuralları
+// ----------------------------------------------------------------------------
+//  Dosyalar kullanıcı klasörlerine ayrılmıştır: users/{uid}/...
+//  Bir kullanıcı başkasının klasörüne ne yazabilir ne de okuyabilir.
+//
+//  Yayınlamak için:  firebase deploy --only storage
+// ============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Sunucu tarafı boyut sınırı: 5 MB. İstemci sınırı atlatılsa bile geçerli.
+    function isUnderSizeLimit() {
+      return request.resource.size <= 5 * 1024 * 1024;
+    }
+
+    // Sadece zararsız medya/doküman türleri. Örn. text/html yüklenip
+    // depolama alanı üzerinden XSS servis edilmesi engellenir.
+    function isAllowedType() {
+      return request.resource.contentType.matches('image/(png|jpeg|jpg|gif|webp|heic)')
+          || request.resource.contentType.matches('audio/(mpeg|mp3|wav|ogg|m4a)')
+          || request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'text/plain';
+    }
+
+    match /users/{userId}/{category}/{fileName} {
+      allow read: if isOwner(userId);
+
+      allow write: if isOwner(userId)
+                   && isUnderSizeLimit()
+                   && isAllowedType()
+                   && (category == 'diaries' || category == 'drafts');
+
+      allow delete: if isOwner(userId);
+    }
+
+    // Eski, korumasız "uploads/" ve "drafts/" kökleri dahil her şey yasak.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

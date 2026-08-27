@@ -1,17 +1,57 @@
-import React, { useState, useEffect } from "react";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
-import { useLocation } from "react-router-dom";
-import { FaSave, FaDraftingCompass, FaFileUpload } from "react-icons/fa";
-import ReactStars from "react-rating-stars-component";
-import { auth, db, storage } from "../firebase";
-import { collection, addDoc, Timestamp, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import "../styles/DiaryEntry.css";
-import { format } from "date-fns"; // Tarih biçimlendirme kütüphanesi
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
+import {
+  FiSave,
+  FiPaperclip,
+  FiTrash2,
+  FiFileText,
+  FiAlertCircle,
+} from "react-icons/fi";
 
-const DiaryEntry = () => {
+import TopBar from "../components/TopBar";
+import StarRating from "../components/StarRating";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { DRAFTS, createDiary, deleteEntry, saveDraft } from "../services/diaries";
+import { fileNameFromUrl, uploadFiles } from "../services/storage";
+import { toFriendlyMessage } from "../utils/errors";
+import { htmlToPlainText } from "../utils/sanitize";
+import { formatBytes } from "../utils/format";
+import {
+  ATTACHMENTS_ENABLED,
+  MAX_CONTENT_CHARS,
+  MAX_FILES,
+  MAX_FILE_MB,
+  validateFileBatch,
+} from "../utils/validation";
+import "../styles/DiaryEntry.css";
+
+/** Quill araç çubuğu — güvenli, sanitize edilebilir biçimlerle sınırlı. */
+const QUILL_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ color: [] }, { background: [] }],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["blockquote", "code-block", "link"],
+    ["clean"],
+  ],
+  clipboard: { matchVisual: false },
+};
+
+const QUILL_FORMATS = [
+  "header", "bold", "italic", "underline", "strike",
+  "color", "background", "list", "blockquote", "code-block", "link",
+];
+
+export default function DiaryEntry() {
+  const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
+  const { userId } = useAuth();
+
   const draft = location.state?.draft || null;
 
   const [content, setContent] = useState(draft?.content || "");
@@ -19,203 +59,303 @@ const DiaryEntry = () => {
   const [rating, setRating] = useState(draft?.rating || 0);
   const [draftId, setDraftId] = useState(draft?.id || null);
 
-  // Yıldız puanı değişikliği
-  const handleRatingChange = (newRating) => {
-    setRating(newRating);
-  };
+  const [saving, setSaving] = useState(null); // "diary" | "draft" | null
+  const [progress, setProgress] = useState(0);
+  const [dirty, setDirty] = useState(false);
 
-  // Dosya yükleme
-  const handleFileUpload = (e) => {
-    const uploadedFiles = Array.from(e.target.files);
-    setFiles((prev) => [...prev, ...uploadedFiles]);
-  };
+  const fileInputRef = useRef(null);
 
-  // Günlük metni değişikliği
-  const handleContentChange = (value) => {
+  const plainText = useMemo(() => htmlToPlainText(content), [content]);
+  const charCount = plainText.length;
+  const wordCount = plainText ? plainText.split(/\s+/).length : 0;
+  const isEmpty = charCount === 0;
+  const tooLong = content.length > MAX_CONTENT_CHARS;
+
+  /* Kaydedilmemiş değişiklik varken sekmeyi kapatmaya çalışan kullanıcıyı uyar */
+  useEffect(() => {
+    if (!dirty) return undefined;
+
+    const warn = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
+  const handleContentChange = useCallback((value) => {
     setContent(value);
-  };
+    setDirty(true);
+  }, []);
 
-  // Günlük kaydetme (yeni günlük)
-  const saveDiary = async (isDraft = false) => {
-    if (!content.trim()) {
-      alert("Günlük metni boş olamaz!");
-      return;
-    }
+  /* ------------------------------------------------------------------
+     Dosya seçimi — boyut, tür ve adet doğrulaması
+     ------------------------------------------------------------------ */
+  const handleFileSelect = (event) => {
+    const picked = Array.from(event.target.files || []);
+    event.target.value = ""; // aynı dosyayı tekrar seçebilmek için sıfırla
 
-    if (rating === 0) {
-      alert("Lütfen günü oylayın.");
-      return;
-    }
+    if (picked.length === 0) return;
 
-    try {
-      const currentDate = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+    const { accepted, errors } = validateFileBatch(picked, files.length);
+    errors.forEach((message) => toast.error(message));
 
-      const fileUrls = await Promise.all(
-        files.map(async (file, index) => {
-          if (typeof file === "string") return file; // Önceden yüklenen dosyaları atla
-          const uniqueFileName = `${currentDate}_${index}_${file.name}`;
-          const storageRef = ref(storage, `uploads/${uniqueFileName}`);
-          await uploadBytes(storageRef, file);
-          return await getDownloadURL(storageRef);
-        })
+    if (accepted.length > 0) {
+      setFiles((current) => [...current, ...accepted]);
+      setDirty(true);
+      toast.success(
+        `${accepted.length} dosya eklendi. Kaydettiğinizde yüklenecek.`
       );
-
-      const diaryEntry = {
-        userId: auth.currentUser.uid,
-        content,
-        rating,
-        files: fileUrls,
-        isDraft,
-        createdAt: Timestamp.now(),
-      };
-
-      await addDoc(collection(db, "diaries"), diaryEntry);
-      alert("Günlük başarıyla kaydedildi!");
-
-      // Formu sıfırla
-      setContent("");
-      setFiles([]);
-      setRating(0);
-      setDraftId(null);
-    } catch (error) {
-      console.error("Günlük kaydedilirken hata oluştu:", error);
-      alert("Günlük kaydedilirken hata oluştu.");
     }
   };
 
-  // Taslak güncelleme veya kaydetme
-  const saveDraft = async () => {
-    try {
-      const currentDate = format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+  const removeFile = (index) => {
+    setFiles((current) => current.filter((_, i) => i !== index));
+    setDirty(true);
+  };
 
-      const fileUrls = await Promise.all(
-        files.map(async (file, index) => {
-          if (typeof file === "string") return file; // Önceden yüklenen dosyaları atla
-          const uniqueFileName = `${currentDate}_${index}_${file.name}`;
-          const storageRef = ref(storage, `drafts/${uniqueFileName}`);
-          await uploadBytes(storageRef, file);
-          return await getDownloadURL(storageRef);
-        })
+  /* ------------------------------------------------------------------
+     Kaydetme
+     ------------------------------------------------------------------ */
+  const persist = async (asDraft) => {
+    if (saving) return;
+
+    if (isEmpty) {
+      toast.error("Günlük metni boş olamaz.");
+      return;
+    }
+
+    if (tooLong) {
+      toast.error("Günlük çok uzun. Lütfen kısaltın.");
+      return;
+    }
+
+    if (!asDraft && rating === 0) {
+      toast.error("Kaydetmeden önce günü yıldızla puanlayın.");
+      return;
+    }
+
+    setSaving(asDraft ? "draft" : "diary");
+    setProgress(0);
+
+    try {
+      const fileUrls = await uploadFiles(
+        userId,
+        asDraft ? "drafts" : "diaries",
+        files,
+        setProgress
       );
 
-      const draftEntry = {
-        userId: auth.currentUser.uid,
-        content,
-        rating: rating || 0,
-        files: fileUrls,
-        isDraft: true,
-        createdAt: Timestamp.now(),
-      };
-
-      if (draftId) {
-        await updateDoc(doc(db, "drafts", draftId), draftEntry);
-        alert("Taslak başarıyla güncellendi!");
-      } else {
-        const newDraft = await addDoc(collection(db, "drafts"), draftEntry);
-        setDraftId(newDraft.id);
-        alert("Taslak başarıyla kaydedildi!");
+      if (asDraft) {
+        const id = await saveDraft({
+          userId,
+          content,
+          rating,
+          files: fileUrls,
+          draftId,
+        });
+        setDraftId(id);
+        setFiles(fileUrls);
+        setDirty(false);
+        toast.success("Taslak kaydedildi. 24 saat içinde tamamlamayı unutma.");
+        return;
       }
+
+      await createDiary({ userId, content, rating, files: fileUrls });
+
+      // Taslaktan geliyorsak taslağı temizle.
+      // (Eski sürümde taslak duruyor ve aynı gün iki kez listeleniyordu.)
+      if (draftId) {
+        await deleteEntry(DRAFTS, { id: draftId, files: [] }).catch(() => {});
+        setDraftId(null);
+      }
+
+      setDirty(false);
+      toast.success("Günlüğün kaydedildi.");
+      navigate("/home", { replace: true });
     } catch (error) {
-      console.error("Taslak kaydedilirken hata oluştu:", error);
-      alert("Taslak kaydedilirken hata oluştu.");
+      toast.error(toFriendlyMessage(error, error?.message || "Kaydedilemedi."));
+    } finally {
+      setSaving(null);
+      setProgress(0);
     }
   };
 
-  // ReactQuill araç çubuğu ayarları
-  const modules = {
-    toolbar: [
-      [{ font: [] }, { size: [] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ color: [] }, { background: [] }],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ align: [] }],
-      ["blockquote", "code-block"],
-      ["clean"],
-    ],
-  };
+  const busy = Boolean(saving);
 
   return (
-    <div className="diary-container">
-      {/* Sağ Üst Köşe Butonları */}
-      <div className="custom-buttons">
-        <button className="custom-btn" onClick={() => saveDiary(false)} title="Günlüğü Kaydet">
-          <FaSave /> Kaydet
-        </button>
-        <button className="custom-btn" onClick={saveDraft} title="Taslak Kaydet">
-          <FaDraftingCompass /> Taslak
-        </button>
+    <div className="shell page-enter">
+      <TopBar
+        title={draftId ? "Taslağı düzenle" : "Yeni günlük"}
+        subtitle={new Date().toLocaleDateString("tr-TR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}
+        backTo="/home"
+        showLogout={false}
+      >
         <button
-          className="custom-btn"
-          onClick={() => document.getElementById("file-upload").click()}
-          title="Dosya Yükle"
+          type="button"
+          className="btn"
+          onClick={() => persist(true)}
+          disabled={busy || isEmpty}
+          title="Taslak olarak kaydet"
         >
-          <FaFileUpload /> Dosya
+          {saving === "draft" ? (
+            <span className="spinner" style={{ width: 16, height: 16 }} />
+          ) : (
+            <FiFileText size={17} aria-hidden="true" />
+          )}
+          <span className="btn-label">Taslak</span>
         </button>
-        <input
-          id="file-upload"
-          type="file"
-          multiple
-          onChange={handleFileUpload}
-          style={{ display: "none" }}
-        />
-      </div>
 
-      {/* Günlük Editör */}
-      <div className="diary-editor">
-        <ReactQuill
-          value={content}
-          onChange={handleContentChange}
-          modules={modules}
-          placeholder="Günlüğünüzü yazmaya başlayın..."
-          className="quill-editor diary-page"
-        />
-      </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => persist(false)}
+          disabled={busy || isEmpty}
+          title="Günlüğü kaydet"
+        >
+          {saving === "diary" ? (
+            <span className="spinner" style={{ width: 16, height: 16 }} />
+          ) : (
+            <FiSave size={17} aria-hidden="true" />
+          )}
+          <span className="btn-label">Kaydet</span>
+        </button>
+      </TopBar>
 
-      {/* Eklenen Dosyalar */}
-      <div className="files-container">
-        <h4>Eklenen Dosyalar:</h4>
-        {files.length > 0 ? (
-          files.map((file, index) => (
-            <div className="file-item" key={index}>
-              {typeof file === "string" ? (
-                <a
-                  href={file}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="file-link"
-                >
-                  {decodeURIComponent(file.split("/").pop().split("?")[0])}
-                </a>
-              ) : (
-                <span className="file-name">{file.name}</span>
-              )}
-              <button
-                onClick={() =>
-                  setFiles((prev) => prev.filter((_, i) => i !== index))
-                }
-              >
-                Sil
-              </button>
+      {busy && progress > 0 && progress < 100 && (
+        <div className="upload-bar" role="progressbar" aria-valuenow={progress}>
+          <span style={{ width: `${progress}%` }} />
+          <em>Dosyalar yükleniyor… %{progress}</em>
+        </div>
+      )}
+
+      <div className="editor-layout">
+        {/* --- Yazma alanı --- */}
+        <section className="editor-panel card">
+          <ReactQuill
+            theme="snow"
+            value={content}
+            onChange={handleContentChange}
+            modules={QUILL_MODULES}
+            formats={QUILL_FORMATS}
+            placeholder="Bugün nasıl geçti? Aklından geçenleri yaz…"
+            readOnly={busy}
+          />
+
+          <footer className="editor-status">
+            <span>
+              {wordCount} kelime · {charCount} karakter
+            </span>
+            {tooLong && (
+              <span className="field-error">
+                <FiAlertCircle size={14} aria-hidden="true" />
+                Sınır aşıldı
+              </span>
+            )}
+            {dirty && !busy && <span className="dot-pulse">Kaydedilmedi</span>}
+          </footer>
+        </section>
+
+        {/* --- Yan panel --- */}
+        <aside className="editor-side">
+          <div className="card side-block">
+            <h2 className="section-title">Bugünü puanla</h2>
+            <div className="rating-box">
+              <StarRating
+                value={rating}
+                onChange={(value) => {
+                  setRating(value);
+                  setDirty(true);
+                }}
+                size={30}
+              />
+              <span className="rating-hint">
+                {rating > 0 ? `${rating} / 5` : "Kaydetmek için gerekli"}
+              </span>
             </div>
-          ))
-        ) : (
-          <p>Henüz dosya eklenmedi.</p>
-        )}
-      </div>
+          </div>
 
-      <div className="rating-container">
-        <div className="rating-title">Bugünü Oyla</div>
-        <ReactStars
-          count={5}
-          value={rating}
-          onChange={handleRatingChange}
-          size={40}
-          isHalf={true}
-          activeColor="#ffd700"
-        />
+          <div className="card side-block">
+            <h2 className="section-title">
+              Ekli dosyalar
+              <span className="count">
+                {files.length}/{MAX_FILES}
+              </span>
+            </h2>
+
+            {!ATTACHMENTS_ENABLED ? (
+              <p className="side-note">
+                Dosya ekleme kapalı. Açmak için <code>.env</code> dosyasında{" "}
+                <code>REACT_APP_ENABLE_ATTACHMENTS=true</code> yapın.
+              </p>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-block dropzone"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={busy || files.length >= MAX_FILES}
+                >
+                  <FiPaperclip size={18} aria-hidden="true" />
+                  Dosya ekle
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="sr-only"
+                  accept="image/*,audio/*,application/pdf,text/plain"
+                  onChange={handleFileSelect}
+                  disabled={busy}
+                />
+
+                <p className="side-note">
+                  Resim, ses, PDF veya TXT · dosya başına en fazla {MAX_FILE_MB} MB
+                </p>
+
+                {files.length > 0 && (
+                  <ul className="file-list">
+                    {files.map((file, index) => {
+                      const uploaded = typeof file === "string";
+                      const name = uploaded ? fileNameFromUrl(file) : file.name;
+
+                      return (
+                        <li
+                          className="file-item stagger"
+                          key={`${name}-${index}`}
+                          style={{ "--i": index }}
+                        >
+                          <span className="file-info">
+                            <strong title={name}>{name}</strong>
+                            <em>
+                              {uploaded ? "Yüklendi" : formatBytes(file.size)}
+                            </em>
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-icon danger-ghost"
+                            onClick={() => removeFile(index)}
+                            disabled={busy}
+                            aria-label={`${name} dosyasını kaldır`}
+                          >
+                            <FiTrash2 size={15} aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );
-};
-
-export default DiaryEntry;
+}

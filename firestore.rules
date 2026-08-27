@@ -1,0 +1,109 @@
+rules_version = '2';
+
+// ============================================================================
+//  Günlük Uygulaması — Firestore Güvenlik Kuralları
+// ----------------------------------------------------------------------------
+//  Temel ilke: SIFIR GÜVEN (zero-trust).
+//  Varsayılan olarak her şey kapalıdır; sadece açıkça izin verilen işlemler
+//  gerçekleşebilir. Bir kullanıcı YALNIZCA kendi kayıtlarına erişebilir.
+//
+//  Yayınlamak için:  firebase deploy --only firestore:rules
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Yardımcı fonksiyonlar ----------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Kaydın sahibi mi? (mevcut belge üzerinden)
+    function owns(resourceData) {
+      return isSignedIn() && resourceData.userId == request.auth.uid;
+    }
+
+    // Sadece izin verilen alanlar var mı? Fazladan alan enjekte edilemez.
+    function hasOnlyAllowedFields(data) {
+      return data.keys().hasOnly([
+        'userId', 'content', 'plainText', 'rating',
+        'files', 'isDraft', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    // Yazılan verinin şekli/sınırları doğru mu?
+    function isValidEntry(data) {
+      return hasOnlyAllowedFields(data)
+        // Sahiplik: başkasının adına kayıt açılamaz.
+        && data.userId is string
+        && data.userId == request.auth.uid
+
+        // İçerik: HTML gövdesi. 200 KB üst sınır → kota patlatma engellenir.
+        && data.content is string
+        && data.content.size() > 0
+        && data.content.size() <= 200000
+
+        // Arama için düz metin kopyası (opsiyonel).
+        && (!('plainText' in data) || (data.plainText is string && data.plainText.size() <= 200000))
+
+        // Puan: 0–5 arası.
+        && data.rating is number
+        && data.rating >= 0
+        && data.rating <= 5
+
+        // Ekli dosyalar: en fazla 5 adet URL.
+        && data.files is list
+        && data.files.size() <= 5
+
+        && data.isDraft is bool
+        && data.createdAt is timestamp;
+    }
+
+    // ---------- Günlükler ----------
+    match /diaries/{diaryId} {
+      // Sadece kendi günlüğünü okuyabilirsin.
+      allow get: if owns(resource.data);
+
+      // Liste sorgusu: Firestore, kuralı ihlal EDEBİLECEK sorguları baştan
+      // reddeder. Bu satır sayesinde istemci where('userId','==',uid) ve
+      // limit() kullanmak ZORUNDADIR; aksi halde sorgu hiç çalışmaz.
+      allow list: if isSignedIn()
+                  && request.query.limit <= 200
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidEntry(request.resource.data);
+
+      // Güncellemede sahip değiştirilemez.
+      allow update: if owns(resource.data)
+                    && isValidEntry(request.resource.data)
+                    && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if owns(resource.data);
+    }
+
+    // ---------- Taslaklar ----------
+    // Not: Eski sürümde bu koleksiyon herkese açıktı ve bir kullanıcı
+    // diğerlerinin taslaklarını okuyup silebiliyordu. Artık kapalı.
+    match /drafts/{draftId} {
+      allow get: if owns(resource.data);
+
+      allow list: if isSignedIn()
+                  && request.query.limit <= 200
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidEntry(request.resource.data);
+
+      allow update: if owns(resource.data)
+                    && isValidEntry(request.resource.data)
+                    && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if owns(resource.data);
+    }
+
+    // ---------- Diğer her şey: yasak ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

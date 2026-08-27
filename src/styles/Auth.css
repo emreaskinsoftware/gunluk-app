@@ -1,85 +1,398 @@
-/* Genel Stil */
-.auth-container {
-    max-width: 400px;
-    margin: 5% auto;
-    padding: 2rem;
-    background: #f9f9f9;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
+/* ==========================================================================
+   Giris / Kayit / Parola sifirlama ekranlari
+   ========================================================================== */
+
+.auth-page {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+  align-items: center;
+  gap: var(--sp-7);
+  padding: var(--sp-5);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   Sol taraf — tanitim paneli
+   -------------------------------------------------------------------------- */
+.auth-hero {
+  padding: var(--sp-6);
+  animation: fade-up 620ms var(--ease-out) both;
+}
+
+.auth-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+
+.auth-logo-mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  font-size: 1.5rem;
+  border-radius: var(--r-lg);
+  background: var(--grad-brand);
+  box-shadow: var(--shadow-glow);
+  animation: float-y 4s var(--ease-in-out) infinite;
+}
+
+.auth-logo-text {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.auth-hero h2 {
+  font-size: clamp(2rem, 4.2vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  margin-bottom: var(--sp-4);
+}
+
+.auth-hero-sub {
+  max-width: 46ch;
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-6);
+}
+
+.auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.auth-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  animation: fade-up 560ms var(--ease-out) both;
+  animation-delay: calc(240ms + var(--i, 0) * 110ms);
+}
+
+.auth-feature-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  background: rgba(99, 102, 241, 0.13);
+  color: var(--brand-500);
+  transition: transform var(--dur) var(--ease-spring);
+}
+
+.auth-features li:hover .auth-feature-icon {
+  transform: scale(1.12) rotate(-6deg);
+}
+
+.auth-features strong {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Sag taraf — form karti
+   -------------------------------------------------------------------------- */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  justify-self: center;
+  padding: var(--sp-6);
+  background: var(--surface-raised);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  animation: fade-up 620ms var(--ease-out) 120ms both;
+}
+
+.auth-card-head {
+  margin-bottom: var(--sp-5);
+}
+
+.auth-card-head h1 {
+  font-size: 1.6rem;
+  margin-bottom: var(--sp-2);
+}
+
+.auth-card-head p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Parolayi goster/gizle dugmesi */
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-subtle);
+  transition: color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+.password-toggle:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.field-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-row .input {
+  padding-right: 3rem;
+}
+
+/* --- Parola gucu gostergesi --- */
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fade-up 260ms var(--ease-out) both;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 5px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: var(--r-full);
+  background: var(--border);
+  transform-origin: left;
+  transition: background-color var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-spring);
+}
+
+.strength-bar.on {
+  animation: bar-fill 320ms var(--ease-spring) both;
+}
+
+@keyframes bar-fill {
+  from {
+    transform: scaleX(0.2);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.strength-0 .strength-bar.on { background: var(--danger-500); }
+.strength-1 .strength-bar.on { background: #f97316; }
+.strength-2 .strength-bar.on { background: var(--amber-500); }
+.strength-3 .strength-bar.on { background: #84cc16; }
+.strength-4 .strength-bar.on { background: var(--success-500); }
+
+.strength-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: 0.78rem;
+  color: var(--text-subtle);
+}
+
+.strength-label {
+  font-weight: 700;
+}
+.strength-0 .strength-label { color: var(--danger-500); }
+.strength-1 .strength-label { color: #f97316; }
+.strength-2 .strength-label { color: var(--amber-500); }
+.strength-3 .strength-label { color: #65a30d; }
+.strength-4 .strength-label { color: var(--success-600); }
+
+/* --- Beni hatirla --- */
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-box {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: transparent;
+  transition: background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.checkbox:hover .checkbox-box {
+  border-color: var(--brand-400);
+}
+
+.checkbox input:checked + .checkbox-box {
+  background: var(--grad-brand);
+  border-color: transparent;
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.checkbox input:focus-visible + .checkbox-box {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* --- Alt baglantilar --- */
+.auth-footer {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-footer a {
+  font-weight: 700;
+}
+
+/* Kilitlenme uyarisi (cok fazla deneme) */
+.auth-lock {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0.85rem 1rem;
+  font-size: 0.86rem;
+  border-radius: var(--r-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: var(--danger-600);
+  animation: fade-up 300ms var(--ease-out) both;
+}
+
+:root[data-theme="dark"] .auth-lock {
+  color: var(--danger-400);
+}
+
+/* Basarili islem kutusu */
+.auth-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-4);
+  text-align: center;
+  border-radius: var(--r-lg);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  animation: pop-in 380ms var(--ease-spring) both;
+}
+
+.auth-success-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-full);
+  background: var(--grad-success);
+  color: #fff;
+  animation: pulse-ring 2.2s var(--ease-out) infinite;
+}
+
+.auth-success p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  max-width: 38ch;
+}
+
+/* Tema dugmesi — sag ust kose */
+.auth-theme-toggle {
+  position: fixed;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  z-index: 50;
+}
+
+/* --------------------------------------------------------------------------
+   Mobil
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    padding: var(--sp-6) var(--sp-4);
+    align-content: center;
+  }
+
+  .auth-hero {
+    padding: 0;
     text-align: center;
   }
-  
-  h2 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 1.5rem;
+
+  .auth-logo {
+    margin-bottom: var(--sp-4);
   }
-  
-  form {
-    display: flex;
-    flex-direction: column;
+
+  .auth-hero h2 {
+    font-size: 1.85rem;
   }
-  
-  input {
-    margin: 0.5rem 0;
-    padding: 0.8rem;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+
+  .auth-hero-sub {
+    margin: 0 auto var(--sp-4);
+    font-size: 0.96rem;
   }
-  
-  button {
-    margin-top: 1rem;
-    padding: 0.8rem;
-    font-size: 1rem;
-    color: white;
-    background: #007bff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+
+  /* Ozellik listesi mobilde yer kaplamasin */
+  .auth-features {
+    display: none;
   }
-  
-  button:hover {
-    background: #0056b3;
+
+  .auth-card {
+    max-width: 460px;
+    padding: var(--sp-5);
   }
-  
-  .links {
-    margin-top: 1.5rem;
-  }
-  
-  .links a {
-    color: #007bff;
-    text-decoration: none;
-    font-size: 0.9rem;
-    display: inline-block;
-  }
-  
-  .links .spacer {
-    display: inline-block;
-    width: 2rem; /* Aradaki boşluk */
-  }
-  
-  .links a:hover {
-    text-decoration: underline;
-  }
-  
-  /* Mobil Uyumluluk */
-  @media screen and (max-width: 600px) {
-    .auth-container {
-      width: 90%;
-      padding: 1.5rem;
-    }
-  
-    h2 {
-      font-size: 1.5rem;
-    }
-  
-    input {
-      padding: 0.6rem;
-    }
-  
-    button {
-      font-size: 0.9rem;
-    }
-  }
-  
+}

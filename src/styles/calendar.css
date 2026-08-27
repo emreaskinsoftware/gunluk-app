@@ -1,0 +1,143 @@
+/* ==========================================================================
+   react-calendar temasi — tasarim sistemine uyarlanmis hali
+   ========================================================================== */
+
+.react-calendar {
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  line-height: 1.4;
+}
+
+/* --- Ust gezinme (ay/yil) --- */
+.react-calendar__navigation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--sp-3);
+  height: auto;
+}
+
+.react-calendar__navigation button {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-md);
+  transition: background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.react-calendar__navigation button:disabled {
+  opacity: 0.4;
+  background: transparent;
+}
+
+.react-calendar__navigation__label {
+  flex-grow: 1;
+  font-size: 1rem !important;
+  letter-spacing: -0.01em;
+}
+
+/* --- Gun basliklari (Pzt, Sal ...) --- */
+.react-calendar__month-view__weekdays {
+  margin-bottom: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+  cursor: default;
+}
+
+/* --- Gun kareleri --- */
+.react-calendar__tile {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1 / 1;
+  padding: 2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-md);
+  transition: background-color var(--dur-fast) var(--ease-out),
+    transform 200ms var(--ease-spring), color var(--dur-fast) var(--ease-out);
+}
+
+.react-calendar__tile:enabled:hover {
+  background: var(--surface-hover);
+  transform: scale(1.12);
+  z-index: 1;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: var(--text-subtle);
+  opacity: 0.5;
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: var(--accent-500);
+}
+
+/* Bugun */
+.react-calendar__tile--now {
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--amber-500);
+  box-shadow: inset 0 0 0 1.5px rgba(251, 191, 36, 0.5);
+}
+
+/* Secili gun */
+.react-calendar__tile--active,
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  color: #fff;
+  background: var(--grad-brand);
+  box-shadow: var(--shadow-glow);
+}
+
+.react-calendar__tile--active .cal-dot {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Gunluk yazilan gunlerin altindaki nokta */
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  animation: pop-in 320ms var(--ease-spring) both;
+}
+
+.cal-dot-strong {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+}
+
+/* Yil / on yil gorunumleri */
+.react-calendar__year-view__months__month,
+.react-calendar__decade-view__years__year,
+.react-calendar__century-view__decades__decade {
+  aspect-ratio: auto;
+  padding: 0.9rem 0.4rem;
+  font-size: 0.86rem;
+}

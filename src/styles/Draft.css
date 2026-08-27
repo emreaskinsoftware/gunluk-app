@@ -1,115 +1,121 @@
-/* Taslaklar Sayfası */
-.drafts-container {
-    width: 80%;
-    max-width: 900px;
-    margin: 100px auto;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+/* ==========================================================================
+   Taslaklar ekrani
+   ========================================================================== */
+
+.draft-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: var(--sp-5);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: var(--r-lg);
+  animation: fade-up 460ms var(--ease-out) 60ms both;
+}
+
+.draft-warning svg {
+  flex-shrink: 0;
+  color: var(--amber-500);
+}
+
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: var(--sp-4);
+}
+
+.draft-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  background: var(--surface-raised);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--dur) var(--ease-spring),
+    box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+
+/* Ust kenardaki kehribar serit — "tamamlanmamis" isareti */
+.draft-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber-400), var(--accent-400));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.draft-card:hover::before {
+  transform: scaleX(1);
+}
+
+.draft-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--amber-400);
+  box-shadow: var(--shadow-lg);
+}
+
+.draft-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.draft-card h3 {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.draft-preview {
+  flex: 1;
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.draft-actions {
+  display: flex;
+  gap: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
+
+.draft-actions .btn-primary {
+  flex: 1;
+  font-size: 0.86rem;
+  padding: 0.6rem 0.9rem;
+  min-height: 40px;
+}
+
+.draft-actions .danger-ghost {
+  margin-left: 0;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
+@media (max-width: 720px) {
+  .draft-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .drafts-title {
-    font-size: 2rem;
-    color: #333;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  /* Taslak Listesi */
-  .draft-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
+
   .draft-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px 20px;
-    transition: all 0.3s ease;
+    padding: var(--sp-4);
   }
-  
-  .draft-card:hover {
-    background: #f0f0f0;
-  }
-  
-  .draft-info {
-    flex-grow: 1;
-  }
-  
-  .draft-title {
-    font-size: 1.5rem;
-    color: #007bff;
-    margin: 0 0 5px;
-  }
-  
-  .draft-date {
-    font-size: 0.9rem;
-    color: #666;
-  }
-  
-  /* Taslak Eylem Butonları */
-  .draft-actions {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .action-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-  }
-  
-  .action-btn:hover {
-    background: #0056b3;
-  }
-  
-  .delete-btn {
-    background: red;
-  }
-  
-  .delete-btn:hover {
-    background: darkred;
-  }
-  
-  /* Tüm Taslakları Silme Butonu */
-  .clear-drafts-btn {
-    display: block;
-    width: 100%;
-    max-width: 300px;
-    margin: 20px auto 0;
-    padding: 10px 15px;
-    background: red;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-  }
-  
-  .clear-drafts-btn:hover {
-    background: darkred;
-  }
-  
-  .no-drafts {
-    text-align: center;
-    font-size: 1.2rem;
-    color: #666;
-  }
-  
+}

@@ -1,30 +1,121 @@
-// src/App.js
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import Home from "./pages/Home";
-import DiaryEntry from "./pages/DiaryEntry";
-import Drafts from "./pages/Draft";
-import DiaryView from "./pages/DiaryView"; // Yeni sayfa
+import React, { Suspense, lazy } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
 
+import AuroraBackground from "./components/AuroraBackground";
+import ConfigError from "./components/ConfigError";
+import PageLoader from "./components/PageLoader";
+import ProtectedRoute, { PublicOnlyRoute } from "./components/ProtectedRoute";
 
-function App() {
+import { isFirebaseConfigured } from "./firebase";
+
+/**
+ * Sayfalar isteğe bağlı yüklenir (code splitting).
+ * Zengin metin editörü (Quill) yaklaşık 200 KB; giriş ekranını açan bir
+ * kullanıcının bunu indirmesi için hiçbir sebep yok.
+ */
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Home = lazy(() => import("./pages/Home"));
+const DiaryEntry = lazy(() => import("./pages/DiaryEntry"));
+const DiaryView = lazy(() => import("./pages/DiaryView"));
+const Drafts = lazy(() => import("./pages/Draft"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+export default function App() {
+  // .env eksikse Firebase'i hiç başlatmadan net bir kurulum ekranı göster.
+  if (!isFirebaseConfigured) {
+    return (
+      <ThemeProvider>
+        <AuroraBackground />
+        <ConfigError />
+      </ThemeProvider>
+    );
+  }
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/diary-view/:id" element={<DiaryView />} />
-        <Route path="/diary" element={<DiaryEntry />} />
-        <Route path="/drafts" element={<Drafts />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AuroraBackground />
+
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* --- Herkese açık (giriş yapmışsa /home'a yönlendirilir) --- */}
+                <Route
+                  path="/"
+                  element={
+                    <PublicOnlyRoute>
+                      <Login />
+                    </PublicOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <PublicOnlyRoute>
+                      <Register />
+                    </PublicOnlyRoute>
+                  }
+                />
+                <Route
+                  path="/reset-password"
+                  element={
+                    <PublicOnlyRoute>
+                      <ResetPassword />
+                    </PublicOnlyRoute>
+                  }
+                />
+
+                {/* --- Oturum gerektiren sayfalar --- */}
+                <Route
+                  path="/home"
+                  element={
+                    <ProtectedRoute>
+                      <Home />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/diary"
+                  element={
+                    <ProtectedRoute>
+                      <DiaryEntry />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/diary-view/:id"
+                  element={
+                    <ProtectedRoute>
+                      <DiaryView />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/drafts"
+                  element={
+                    <ProtectedRoute>
+                      <Drafts />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Eski bağlantı uyumluluğu */}
+                <Route path="/diary-view" element={<Navigate to="/home" replace />} />
+
+                {/* --- 404 --- */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
-
-export default App;

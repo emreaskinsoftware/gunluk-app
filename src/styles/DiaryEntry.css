@@ -1,146 +1,344 @@
-/* Araç Çubuğu */
-.ql-toolbar {
-  position: fixed;
+/* ==========================================================================
+   Gunluk yazma ekrani
+   ========================================================================== */
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+/* --- Yazma paneli --- */
+.editor-panel {
+  overflow: hidden;
+  animation: fade-up 520ms var(--ease-out) both;
+}
+
+/* Quill arac cubugu — tasarim sistemine uyarlanmis
+   (Eski surumde arac cubugu `position: fixed` idi ve sayfanin ustune
+   yapisip diger butonlarin uzerine biniyordu.) */
+.editor-panel .ql-toolbar.ql-snow {
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  background-color: #ffffff;
-  border-bottom: 1px solid #ddd;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  padding: 0.5rem 1rem;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Özel Kaydet ve Dosya Butonları */
-/* Sağ Üst Köşe Butonları */
-.custom-buttons {
-  position: fixed;
-  top: 1px; /* Sağ üst köşe hizalaması */
-  right: 1rem;
-  display: flex;
-  align-items: center; /* Dikey hizalama */
-  gap: 5px; /* Butonlar arasında boşluk */
-  z-index: 1001;
-}
-
-.custom-buttons button {
-  background-color: #007bff;
-  color: white;
+  z-index: 5;
+  padding: var(--sp-3);
+  background: var(--surface-2);
   border: none;
-  border-radius: 5px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  font-family: var(--font-sans);
+}
+
+.editor-panel .ql-container.ql-snow {
+  border: none;
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+}
+
+.editor-panel .ql-editor {
+  min-height: 55vh;
+  padding: var(--sp-6);
+  line-height: 1.85;
+  color: var(--text);
+}
+
+.editor-panel .ql-editor.ql-blank::before {
+  left: var(--sp-6);
+  right: var(--sp-6);
+  color: var(--text-subtle);
+  font-style: normal;
+  font-family: var(--font-serif);
+}
+
+/* Arac cubugu ikonlari — koyu temada gorunur olmali */
+.ql-snow .ql-stroke {
+  stroke: var(--text-muted);
+}
+.ql-snow .ql-fill,
+.ql-snow .ql-stroke.ql-fill {
+  fill: var(--text-muted);
+}
+.ql-snow .ql-picker {
+  color: var(--text-muted);
+}
+
+.ql-snow .ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow .ql-toolbar button.ql-active .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke,
+.ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke {
+  stroke: var(--brand-500);
+}
+
+.ql-snow .ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: var(--brand-500);
+}
+
+.ql-snow.ql-toolbar button,
+.ql-snow .ql-toolbar button {
+  border-radius: var(--r-sm);
+  transition: background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+.ql-snow.ql-toolbar button:hover {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+.ql-snow.ql-toolbar .ql-picker-label:hover,
+.ql-snow.ql-toolbar .ql-picker-label.ql-active {
+  color: var(--brand-500);
+}
+
+/* Acilir menuler (baslik, renk) */
+.ql-snow .ql-picker-options {
+  background: var(--surface);
+  border: 1px solid var(--border) !important;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+}
+
+.ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  border-color: transparent;
+}
+
+/* Bag kutusu (link tooltip) */
+.ql-snow .ql-tooltip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+}
+.ql-snow .ql-tooltip input[type="text"] {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+}
+
+/* Editor icerik bicimleri */
+.editor-panel .ql-editor blockquote {
+  border-left: 3px solid var(--brand-400);
+  padding-left: var(--sp-4);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.editor-panel .ql-editor pre.ql-syntax {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+/* --- Durum cubugu --- */
+.editor-status {
   display: flex;
-  align-items: center; /* İçerik (simge ve metin) hizalaması */
-  justify-content: center;
-  gap: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  height: 35px; /* Sabit yükseklik */
-  width: 100px; /* Sabit genişlik */
-  box-sizing: border-box; /* İç ve dış boşlukları hesaba kat */
-  line-height: 1; /* Varsayılan satır yüksekliğini sıfırla */
-  vertical-align: middle; /* Dikey hizalama */
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-5);
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
 }
 
-.custom-buttons button:hover {
-  background-color: #0056b3;
+.editor-status .field-error {
+  margin-left: auto;
 }
 
+.dot-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--amber-500);
+  font-weight: 600;
+}
 
+.dot-pulse::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 1.6s var(--ease-in-out) infinite;
+}
 
-/* Günlük Editör */
-.diary-editor {
-  width: 700px;
-  height: 600px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 100px auto 20px;
-  overflow-y: auto; /* Kaydırılabilir alan */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+/* --- Yukleme ilerleme cubugu --- */
+.upload-bar {
   position: relative;
+  height: 34px;
+  margin-bottom: var(--sp-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  animation: fade-up 300ms var(--ease-out) both;
 }
 
-/* Sayfa İçeriği */
-.diary-page {
-  width: 100%;
-  height: 100%;
-  padding: 1rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  text-align: left;
-  word-break: break-word;
-  overflow-y: auto;
+.upload-bar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--grad-brand);
+  border-radius: var(--r-full);
+  transition: width 220ms var(--ease-out);
 }
 
+.upload-bar em {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--text);
+  mix-blend-mode: difference;
+}
 
-/* Sayfa Geçişi */
-.page-controls {
+/* --- Yan panel --- */
+.editor-side {
   display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
+  flex-direction: column;
+  gap: var(--sp-4);
+  position: sticky;
+  top: calc(var(--header-h) + var(--sp-4));
 }
 
-.page-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.side-block {
+  padding: var(--sp-5);
+  animation: fade-up 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 120ms);
 }
 
-/* Eklenen Dosyalar */
-.files-container {
-  width: 658px;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 5px auto;
-  padding: 1rem;
+.side-block .section-title {
+  margin-bottom: var(--sp-4);
+  font-size: 0.95rem;
+}
+
+.rating-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.rating-hint {
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+}
+
+.side-note {
+  margin-top: var(--sp-3);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-subtle);
+}
+
+.side-note code {
+  padding: 1px 5px;
+  font-size: 0.92em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+/* Dosya ekleme dugmesi — kesikli cerceve */
+.dropzone {
+  border-style: dashed;
+  border-width: 1.5px;
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.dropzone:hover:not(:disabled) {
+  border-color: var(--brand-400);
+  color: var(--brand-500);
+  background: rgba(99, 102, 241, 0.07);
+}
+
+/* --- Dosya listesi --- */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .file-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 5px 10px;
-  margin-bottom: 5px;
+  gap: var(--sp-2);
+  padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-spring);
 }
 
-.file-item button {
-  background-color: red;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
+.file-item:hover {
+  border-color: var(--brand-300);
+  transform: translateX(2px);
 }
 
-/* Puanlama Konteyneri */
-.rating-container {
-  margin: 20px auto;
-  text-align: center;
-  width: 100%;
-}
-
-.rating-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-}
-
-.rating-stars {
+.file-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
 }
 
-.react-stars {
-  display: inline-flex;
+.file-info strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-info em {
+  font-size: 0.72rem;
+  font-style: normal;
+  color: var(--text-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   Uyarlanabilir yerlesim
+   -------------------------------------------------------------------------- */
+@media (max-width: 980px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-side {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .editor-panel .ql-editor {
+    padding: var(--sp-4);
+    min-height: 45vh;
+  }
+
+  .editor-panel .ql-editor.ql-blank::before {
+    left: var(--sp-4);
+    right: var(--sp-4);
+  }
 }
