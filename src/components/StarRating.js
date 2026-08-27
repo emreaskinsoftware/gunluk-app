@@ -1,38 +1,52 @@
 import React, { useState } from "react";
-import { FaStar } from "react-icons/fa";
 
 /**
- * Yıldız puanlama bileşeni.
+ * Yıldız puanlama — sıfır bağımlılık.
  *
- * `react-rating-stars-component` paketinin yerini alır. O paket React 18'i
- * peer bağımlılık olarak desteklemiyordu ve `npm install` sırasında ERESOLVE
- * hatası veriyordu. Bu bileşen sıfır bağımlılıkla aynı işi yapar; üstüne
- * klavye erişilebilirliği ve seçim animasyonu ekler.
+ * Yıldız simgesi doğrudan SVG olarak çizilir; bir simge paketine bağlı
+ * kalmadan çizgi kalınlığı ve dolgu davranışı tam denetim altında olur.
+ * Boş yıldız yalnızca konturdur, dolu yıldız mürekkeple dolar.
  */
+
+function Star({ size, filled }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.44 6.2 20.5l1.1-6.47L2.6 9.45l6.5-.95z" />
+    </svg>
+  );
+}
+
 export default function StarRating({
   value = 0,
   onChange,
-  size = 34,
+  size = 20,
   readOnly = false,
-  label = "Bugünü puanla",
+  label = "Günü puanla",
 }) {
   const [hover, setHover] = useState(0);
-  const [justPicked, setJustPicked] = useState(0);
+  const [justSet, setJustSet] = useState(0);
 
-  const active = hover || value;
+  const shown = hover || value;
 
   const pick = (star) => {
     if (readOnly || !onChange) return;
-    // Aynı yıldıza tekrar basmak puanı sıfırlar
-    const next = star === value ? 0 : star;
-    onChange(next);
-    setJustPicked(star);
-    window.setTimeout(() => setJustPicked(0), 420);
+    onChange(star === value ? 0 : star); // aynı yıldıza tekrar basmak sıfırlar
+    setJustSet(star);
+    window.setTimeout(() => setJustSet(0), 320);
   };
 
   return (
-    <div
-      className={`stars${readOnly ? " stars-readonly" : ""}`}
+    <span
+      className={`stars${readOnly ? " stars-static" : ""}`}
       role={readOnly ? "img" : "radiogroup"}
       aria-label={readOnly ? `${value} / 5 yıldız` : label}
       onMouseLeave={() => setHover(0)}
@@ -41,14 +55,7 @@ export default function StarRating({
         <button
           key={star}
           type="button"
-          className={[
-            "star-btn",
-            star <= active ? "is-active" : "",
-            justPicked === star ? "just-picked" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          style={{ transitionDelay: `${star * 18}ms` }}
+          className={`star${star <= shown ? " on" : ""}${justSet === star ? " set" : ""}`}
           disabled={readOnly}
           tabIndex={readOnly ? -1 : 0}
           role={readOnly ? undefined : "radio"}
@@ -59,9 +66,9 @@ export default function StarRating({
           onBlur={() => setHover(0)}
           onClick={() => pick(star)}
         >
-          <FaStar size={size} aria-hidden="true" />
+          <Star size={size} filled={star <= shown} />
         </button>
       ))}
-    </div>
+    </span>
   );
 }

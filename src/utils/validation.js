@@ -1,106 +1,111 @@
 /**
- * Girdi doğrulama kuralları.
+ * Girdi doğrulama ve sınırlar.
  *
- * NOT: Buradaki kontroller sadece KULLANICI DENEYİMİ içindir. Gerçek
- * zorlayıcı sınırlar firestore.rules ve storage.rules dosyalarındadır;
- * istemci kodu her zaman atlatılabilir.
+ * Uygulama sunucusuz çalıştığı için "sunucu tarafı doğrulama" diye bir katman
+ * yok — veri zaten kullanıcının kendi cihazında ve kendi anahtarıyla şifreli.
+ * Buradaki kurallar veri bütünlüğü, depolama kotası ve kullanıcı deneyimi için.
  */
 
 /* --------------------------------------------------------------------------
-   Ortam ayarları (.env)
+   Sınırlar
    -------------------------------------------------------------------------- */
-export const ATTACHMENTS_ENABLED =
-  process.env.REACT_APP_ENABLE_ATTACHMENTS !== "false";
 
-export const MAX_FILE_MB = Number(process.env.REACT_APP_MAX_FILE_MB) || 5;
-export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
-export const MAX_FILES = Number(process.env.REACT_APP_MAX_FILES) || 5;
-
-/** İçerik üst sınırı — firestore.rules ile birebir aynı olmalı. */
+/** Bir günlüğün azami HTML uzunluğu. */
 export const MAX_CONTENT_CHARS = 200000;
 
-/* --------------------------------------------------------------------------
-   E-posta
-   -------------------------------------------------------------------------- */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+/** Tek dosya için üst sınır. Tarayıcı depolama kotasını korur. */
+export const MAX_FILE_MB = 5;
+export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-export function validateEmail(email) {
-  const value = String(email || "").trim();
-  if (!value) return "E-posta adresi gerekli.";
-  if (value.length > 254) return "E-posta adresi çok uzun.";
-  if (!EMAIL_RE.test(value)) return "Geçerli bir e-posta adresi girin.";
-  return null;
-}
+/** Bir günlüğe eklenebilecek azami dosya sayısı. */
+export const MAX_FILES = 5;
+
+/** Şifreleme parolası için asgari uzunluk. */
+export const MIN_PASSPHRASE_LENGTH = 10;
 
 /* --------------------------------------------------------------------------
    Parola
+   --------------------------------------------------------------------------
+   Bu parola bir hesap parolası değil, ŞİFRELEME ANAHTARININ kaynağı.
+   Unutulursa kurtarma yolu yoktur; bu yüzden uzunluğu öne çıkarıyoruz.
+   Uzun bir cümle ("kirmizi bisiklet pazar sabahi 7"), kısa ve karmaşık bir
+   paroladan ("Ab1!x") kırılması çok daha zordur.
    -------------------------------------------------------------------------- */
 
-/** Sızıntı listelerinde en sık görülen parolalar. */
-const COMMON_PASSWORDS = new Set([
-  "12345678", "123456789", "1234567890", "password", "password1", "qwerty123",
-  "11111111", "iloveyou", "sifre123", "parola123", "admin123", "abcd1234",
-  "qwertyui", "123123123", "112233445", "asdasdasd", "türkiye1", "galatasaray",
-  "fenerbahce", "besiktas1", "trabzonspor",
+const COMMON_PASSPHRASES = new Set([
+  "1234567890", "parola1234", "sifre12345", "password12", "qwertyuiop",
+  "1234512345", "gunlukparola", "benimparolam", "123456789012",
 ]);
 
 /**
- * Parola gücünü 0–4 arası puanlar ve eksikleri döndürür.
+ * Parola gücünü 0–4 arası puanlar.
  * @returns {{score:number, label:string, hints:string[], ok:boolean}}
  */
-export function scorePassword(password) {
-  const value = String(password || "");
+export function scorePassphrase(passphrase) {
+  const value = String(passphrase || "");
   const hints = [];
   let score = 0;
 
-  if (value.length >= 8) score++;
-  else hints.push("en az 8 karakter");
+  if (value.length >= MIN_PASSPHRASE_LENGTH) score += 1;
+  else hints.push(`en az ${MIN_PASSPHRASE_LENGTH} karakter`);
 
-  if (/[a-zçğıöşü]/.test(value) && /[A-ZÇĞİÖŞÜ]/.test(value)) score++;
-  else hints.push("büyük ve küçük harf");
+  if (value.length >= 16) score += 1;
+  else if (value.length >= MIN_PASSPHRASE_LENGTH) hints.push("daha uzun (16+ ideal)");
 
-  if (/\d/.test(value)) score++;
-  else hints.push("en az bir rakam");
+  if (value.length >= 24) score += 1;
 
-  if (/[^A-Za-z0-9]/.test(value)) score++;
-  else hints.push("bir sembol (!, ?, # …)");
+  // Çeşitlilik: harf, rakam, sembol, boşluk
+  const variety =
+    Number(/[a-zçğıöşü]/.test(value)) +
+    Number(/[A-ZÇĞİÖŞÜ]/.test(value)) +
+    Number(/\d/.test(value)) +
+    Number(/[^\w\s]/.test(value)) +
+    Number(/\s/.test(value));
 
-  if (value.length >= 14) score = Math.min(4, score + 1);
+  if (variety >= 3) score += 1;
+  else hints.push("farklı karakter türleri veya birkaç kelime");
 
-  if (COMMON_PASSWORDS.has(value.toLowerCase())) {
-    score = 0;
-    hints.unshift("bu parola çok yaygın, tahmin edilmesi kolay");
+  // Aynı karakterin tekrarı ("aaaaaaaaaa") uzunluğu sahte şişirir
+  if (value.length > 0 && new Set(value).size <= 3) {
+    score = Math.min(score, 1);
+    hints.unshift("çok tekrarlı");
   }
 
-  const labels = ["Çok zayıf", "Zayıf", "Orta", "Güçlü", "Çok güçlü"];
+  if (COMMON_PASSPHRASES.has(value.toLowerCase().replace(/\s/g, ""))) {
+    score = 0;
+    hints.unshift("bu parola çok yaygın");
+  }
+
+  score = Math.max(0, Math.min(4, score));
 
   return {
     score,
-    label: labels[score],
+    label: ["Çok zayıf", "Zayıf", "Orta", "Güçlü", "Çok güçlü"][score],
     hints,
-    // Kayıt için asgari eşik: 8 karakter + harf + rakam
-    ok: value.length >= 8 && /[A-Za-zÇĞİÖŞÜçğıöşü]/.test(value) && /\d/.test(value) &&
-        !COMMON_PASSWORDS.has(value.toLowerCase()),
+    ok: validatePassphrase(value) === null,
   };
 }
 
-export function validatePassword(password) {
-  const value = String(password || "");
+/** @returns {string|null} hata mesajı ya da null */
+export function validatePassphrase(passphrase) {
+  const value = String(passphrase || "");
+
   if (!value) return "Parola gerekli.";
-  if (value.length < 8) return "Parola en az 8 karakter olmalı.";
-  if (value.length > 128) return "Parola en fazla 128 karakter olabilir.";
-  if (!/\d/.test(value)) return "Parola en az bir rakam içermeli.";
-  if (!/[A-Za-zÇĞİÖŞÜçğıöşü]/.test(value)) return "Parola en az bir harf içermeli.";
-  if (COMMON_PASSWORDS.has(value.toLowerCase()))
+  if (value.length < MIN_PASSPHRASE_LENGTH)
+    return `Parola en az ${MIN_PASSPHRASE_LENGTH} karakter olmalı.`;
+  if (value.length > 256) return "Parola en fazla 256 karakter olabilir.";
+  if (new Set(value).size <= 3)
+    return "Parola çok tekrarlı. Farklı karakterler kullanın.";
+  if (COMMON_PASSPHRASES.has(value.toLowerCase().replace(/\s/g, "")))
     return "Bu parola çok yaygın kullanılıyor, farklı bir tane seçin.";
+
   return null;
 }
 
 /* --------------------------------------------------------------------------
-   Dosya yükleme
+   Dosya ekleri
    -------------------------------------------------------------------------- */
 
-/** storage.rules ile aynı liste — sunucu tarafı da bunu zorunlu kılar. */
 const ALLOWED_MIME = [
   "image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/heic",
   "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/m4a",
@@ -116,22 +121,20 @@ const ALLOWED_EXT = [
 
 /**
  * Tek bir dosyayı doğrular.
- * @param {File} file
  * @returns {string|null} hata mesajı ya da null
  */
 export function validateFile(file) {
   if (!file) return "Dosya okunamadı.";
-
   if (file.size === 0) return `"${file.name}" boş bir dosya.`;
 
   if (file.size > MAX_FILE_BYTES) {
-    const mb = (file.size / 1024 / 1024).toFixed(1);
+    const mb = (file.size / 1024 / 1024).toFixed(1).replace(".", ",");
     return `"${file.name}" çok büyük (${mb} MB). Üst sınır ${MAX_FILE_MB} MB.`;
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
 
-  // Hem MIME hem uzantı kontrolü: biri sahteyse diğeri yakalar.
+  // Hem MIME hem uzantı denetlenir: biri sahteyse diğeri yakalar
   if (!ALLOWED_MIME.includes(file.type) || !ALLOWED_EXT.includes(ext)) {
     return `"${file.name}" desteklenmiyor. İzin verilenler: resim, ses, PDF, TXT.`;
   }
@@ -152,6 +155,7 @@ export function validateFileBatch(newFiles, existingCount = 0) {
       errors.push(`En fazla ${MAX_FILES} dosya ekleyebilirsiniz.`);
       break;
     }
+
     const error = validateFile(file);
     if (error) errors.push(error);
     else accepted.push(file);

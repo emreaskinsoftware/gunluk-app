@@ -1,17 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { FiAlertTriangle } from "react-icons/fi";
 
 /**
  * Onay penceresi — `window.confirm()` yerine.
  *
- * Erişilebilirlik: Esc ile kapanır, odak pencerenin içinde hapsedilir
- * (focus trap) ve açılırken güvenli olan "Vazgeç" düğmesi odaklanır.
+ * Erişilebilirlik: Esc kapatır, odak pencerede hapsolur, açılışta güvenli
+ * olan "Vazgeç" düğmesi odaklanır.
  */
 export default function ConfirmDialog({
   open,
+  eyebrow = "Onay",
   title = "Emin misiniz?",
   description,
-  confirmLabel = "Evet, sil",
+  confirmLabel = "Sil",
   cancelLabel = "Vazgeç",
   danger = true,
   busy = false,
@@ -35,7 +35,6 @@ export default function ConfirmDialog({
 
       if (event.key !== "Tab") return;
 
-      // Odağı pencere içinde tut
       const focusables = dialogRef.current?.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
@@ -61,7 +60,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="modal-backdrop"
+      className="backdrop"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel?.();
       }}
@@ -74,10 +73,7 @@ export default function ConfirmDialog({
         aria-labelledby="confirm-title"
         aria-describedby={description ? "confirm-desc" : undefined}
       >
-        <div className="modal-icon" aria-hidden="true">
-          <FiAlertTriangle size={24} />
-        </div>
-
+        <span className="label">{eyebrow}</span>
         <h3 id="confirm-title">{title}</h3>
         {description && <p id="confirm-desc">{description}</p>}
 
@@ -93,11 +89,11 @@ export default function ConfirmDialog({
           </button>
           <button
             type="button"
-            className={`btn ${danger ? "btn-danger" : "btn-primary"}`}
+            className={danger ? "btn btn-danger" : "btn btn-primary"}
             onClick={onConfirm}
             disabled={busy}
           >
-            {busy && <span className="spinner" style={{ width: 16, height: 16 }} />}
+            {busy && <span className="spinner" />}
             {confirmLabel}
           </button>
         </div>

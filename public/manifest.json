@@ -1,7 +1,7 @@
 {
-  "short_name": "Günlüğüm",
-  "name": "Günlüğüm — Kişisel Dijital Günlük",
-  "description": "Günlerini yaz, yıldızla puanla, takvimde takip et.",
+  "short_name": "Günlük",
+  "name": "Günlük — şifreli kişisel defter",
+  "description": "Uçtan uca şifreli, sunucusuz günlük. Yazdıkların cihazından çıkmaz.",
   "lang": "tr",
   "dir": "ltr",
   "icons": [
@@ -27,6 +27,6 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#6366f1",
-  "background_color": "#f6f7fb"
+  "theme_color": "#faf7f0",
+  "background_color": "#faf7f0"
 }

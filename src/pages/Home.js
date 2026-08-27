@@ -3,169 +3,138 @@ import { useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import {
   FiPlus,
-  FiFileText,
   FiSearch,
-  FiEye,
+  FiX,
+  FiFileText,
+  FiPaperclip,
   FiDownload,
   FiTrash2,
-  FiX,
-  FiMail,
-  FiPaperclip,
 } from "react-icons/fi";
-import { FaStar } from "react-icons/fa";
-import { sendEmailVerification } from "firebase/auth";
 
-import TopBar from "../components/TopBar";
+import Masthead from "../components/Masthead";
 import StarRating from "../components/StarRating";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { useAuth } from "../context/AuthContext";
+import { useVault } from "../context/VaultContext";
 import { useToast } from "../context/ToastContext";
-import { auth } from "../firebase";
-import { DIARIES, deleteEntry, fetchDiaries } from "../services/diaries";
-import { fileNameFromUrl } from "../services/storage";
+import { KIND, deleteEntryById, listEntries, purgeExpiredDrafts } from "../services/vault";
 import { toFriendlyMessage } from "../utils/errors";
-import { htmlToPlainText, safeFileName } from "../utils/sanitize";
-import {
-  dayKey,
-  formatLongDate,
-  formatRelative,
-  truncate,
-} from "../utils/format";
+import { safeFileName } from "../utils/sanitize";
+import { dayKey, formatLongDate, formatShortDate, truncate, weekday } from "../utils/format";
 import "../styles/Home.css";
 
-const SORT_OPTIONS = [
-  { value: "newest", label: "Önce yeniler" },
-  { value: "oldest", label: "Önce eskiler" },
-  { value: "highest", label: "Yüksek puan" },
-  { value: "lowest", label: "Düşük puan" },
+const SORTS = [
+  { value: "yeni", label: "Önce yeniler" },
+  { value: "eski", label: "Önce eskiler" },
+  { value: "yuksek", label: "Yüksek puan" },
+  { value: "dusuk", label: "Düşük puan" },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, userId } = useAuth();
+  const { key } = useVault();
 
-  const [diaries, setDiaries] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [draftCount, setDraftCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortOption, setSortOption] = useState("newest");
+  const [sort, setSort] = useState("yeni");
   const [selectedDay, setSelectedDay] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
 
-  /* ------------------------------------------------------------------
-     Veri yükleme
-     Tek sorgu (userId + createdAt desc). Sıralama ve filtreleme bellekte
-     yapılır: ek Firestore okuması olmaz, ücretsiz kota korunur.
-     ------------------------------------------------------------------ */
+  /* ---- Yükleme ---- */
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!key) return;
 
     setLoading(true);
     try {
-      setDiaries(await fetchDiaries(userId));
+      // Süresi dolmuş taslakları her açılışta gerçekten sil
+      const purged = await purgeExpiredDrafts();
+      if (purged > 0) toast.info(`${purged} süresi dolmuş taslak silindi.`);
+
+      const [diaries, drafts] = await Promise.all([
+        listEntries(key, KIND.DIARY),
+        listEntries(key, KIND.DRAFT),
+      ]);
+
+      setEntries(diaries);
+      setDraftCount(drafts.length);
     } catch (error) {
-      toast.error(toFriendlyMessage(error, "Günlükler yüklenemedi."));
+      toast.error(toFriendlyMessage(error, "Günlükler açılamadı."));
     } finally {
       setLoading(false);
     }
-  }, [userId, toast]);
+  }, [key, toast]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  /* ------------------------------------------------------------------
-     Türetilmiş veriler
-     ------------------------------------------------------------------ */
+  /* ---- Türetilmiş veriler ---- */
 
-  /** Takvimde işaretlenecek günler: "2025-03-12" -> { count, rating } */
-  const dayIndex = useMemo(() => {
-    const index = new Map();
-
-    for (const diary of diaries) {
-      const key = dayKey(diary.createdAt);
-      if (!key) continue;
-
-      const current = index.get(key) || { count: 0, rating: 0 };
-      index.set(key, {
+  /** Takvimde işaretlenecek günler. */
+  const days = useMemo(() => {
+    const map = new Map();
+    for (const entry of entries) {
+      const day = dayKey(entry.createdAt);
+      if (!day) continue;
+      const current = map.get(day) || { count: 0, rating: 0 };
+      map.set(day, {
         count: current.count + 1,
-        rating: Math.max(current.rating, diary.rating || 0),
+        rating: Math.max(current.rating, entry.rating || 0),
       });
     }
+    return map;
+  }, [entries]);
 
-    return index;
-  }, [diaries]);
-
-  const stats = useMemo(() => {
-    const rated = diaries.filter((d) => (d.rating || 0) > 0);
+  const summary = useMemo(() => {
+    const rated = entries.filter((entry) => entry.rating > 0);
     const average = rated.length
-      ? rated.reduce((sum, d) => sum + d.rating, 0) / rated.length
+      ? rated.reduce((sum, entry) => sum + entry.rating, 0) / rated.length
       : 0;
 
-    const thisMonth = new Date().toISOString().slice(0, 7);
-    const monthCount = diaries.filter((d) =>
-      (dayKey(d.createdAt) || "").startsWith(thisMonth)
-    ).length;
+    const month = new Date().toISOString().slice(0, 7);
 
     return {
-      total: diaries.length,
-      average: average.toFixed(1).replace(".", ","),
-      monthCount,
-      dayCount: dayIndex.size,
+      total: entries.length,
+      thisMonth: entries.filter((entry) => (dayKey(entry.createdAt) || "").startsWith(month)).length,
+      days: days.size,
+      average: average ? average.toFixed(1).replace(".", ",") : "—",
     };
-  }, [diaries, dayIndex]);
+  }, [entries, days]);
 
-  const visibleDiaries = useMemo(() => {
+  const visible = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("tr");
-    const selectedKey = selectedDay ? dayKey(selectedDay) : null;
+    const selected = selectedDay ? dayKey(selectedDay) : null;
 
-    const filtered = diaries.filter((diary) => {
-      if (selectedKey && dayKey(diary.createdAt) !== selectedKey) return false;
+    const filtered = entries.filter((entry) => {
+      if (selected && dayKey(entry.createdAt) !== selected) return false;
       if (!term) return true;
 
-      // Eski sürümde arama yalnızca tarih başlığında çalışıyordu.
-      // Artık günlük metninde de arıyoruz.
-      const haystack = [
-        formatLongDate(diary.createdAt),
-        diary.plainText || htmlToPlainText(diary.content),
-      ]
-        .join(" ")
-        .toLocaleLowerCase("tr");
-
-      return haystack.includes(term);
+      // Tarih başlığında da, günlük metninde de ara
+      return `${formatLongDate(entry.createdAt)} ${entry.plainText}`
+        .toLocaleLowerCase("tr")
+        .includes(term);
     });
 
     const sorted = [...filtered];
-    switch (sortOption) {
-      case "oldest":
-        sorted.reverse();
-        break;
-      case "highest":
-        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "lowest":
-        sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
-        break;
-      default:
-        break; // "newest" — sorgu zaten bu sırada geliyor
-    }
+    if (sort === "eski") sorted.reverse();
+    else if (sort === "yuksek") sorted.sort((a, b) => b.rating - a.rating);
+    else if (sort === "dusuk") sorted.sort((a, b) => a.rating - b.rating);
 
     return sorted;
-  }, [diaries, search, selectedDay, sortOption]);
+  }, [entries, search, selectedDay, sort]);
 
-  /* ------------------------------------------------------------------
-     İşlemler
-     ------------------------------------------------------------------ */
+  /* ---- İşlemler ---- */
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
 
     setDeleting(true);
     try {
-      await deleteEntry(DIARIES, pendingDelete);
-      setDiaries((current) => current.filter((d) => d.id !== pendingDelete.id));
+      await deleteEntryById(pendingDelete.id);
+      setEntries((current) => current.filter((entry) => entry.id !== pendingDelete.id));
       toast.success("Günlük silindi.");
       setPendingDelete(null);
     } catch (error) {
@@ -175,26 +144,20 @@ export default function Home() {
     }
   };
 
-  /** Günlüğü .txt olarak indirir. Ekli dosyalar ayrı bağlantılarla açılır. */
-  const downloadDiary = (diary) => {
-    const title = formatLongDate(diary.createdAt);
-    const stars = "*".repeat(diary.rating || 0);
-    const body = diary.plainText || htmlToPlainText(diary.content);
+  const download = (entry) => {
+    const title = formatLongDate(entry.createdAt);
+    const attachments = (entry.files || []).map((file, i) => `${i + 1}. ${file.name}`).join("\n");
 
-    const attachments = (diary.files || [])
-      .map((url, index) => `${index + 1}. ${fileNameFromUrl(url)}\n   ${url}`)
-      .join("\n");
-
-    const content =
-      `${title}\n${"=".repeat(title.length)}\n\n` +
-      `Puan: ${stars || "-"} (${diary.rating || 0}/5)\n\n` +
-      `${body}\n` +
+    const text =
+      `${title}\n${"—".repeat(title.length)}\n\n` +
+      `Puan: ${entry.rating || 0}/5\n\n` +
+      `${entry.plainText}\n` +
       (attachments ? `\n\nEkli dosyalar:\n${attachments}\n` : "");
 
-    const blob = new Blob([`﻿${content}`], {
-      type: "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
+    // Başa BOM: Windows Not Defteri Türkçe karakterleri doğru göstersin
+    const url = URL.createObjectURL(
+      new Blob([`﻿${text}`], { type: "text/plain;charset=utf-8" })
+    );
 
     const link = document.createElement("a");
     link.href = url;
@@ -202,314 +165,245 @@ export default function Home() {
     document.body.appendChild(link);
     link.click();
     link.remove();
-
-    // Eski kodda oluşturulan blob URL'leri hiç serbest bırakılmıyordu (bellek sızıntısı)
     URL.revokeObjectURL(url);
-
-    toast.success("Günlük indirildi.");
   };
 
-  const resendVerification = async () => {
-    try {
-      await sendEmailVerification(auth.currentUser);
-      setVerificationSent(true);
-      toast.success("Doğrulama e-postası tekrar gönderildi.");
-    } catch (error) {
-      toast.error(toFriendlyMessage(error, "E-posta gönderilemedi."));
-    }
-  };
-
-  /* ------------------------------------------------------------------
-     Görünüm
-     ------------------------------------------------------------------ */
+  /* ---- Görünüm ---- */
   return (
-    <div className="shell page-enter">
-      <TopBar
-        title="Günlüğüm"
-        subtitle={user?.email || undefined}
-        backTo={undefined}
+    <div className="sheet page">
+      <Masthead
+        title="Günlük"
+        eyebrow={formatShortDate(Date.now())}
       >
         <button
           type="button"
-          className="btn btn-ghost"
-          onClick={() => navigate("/drafts")}
-          title="Taslaklar"
+          className="btn btn-quiet"
+          onClick={() => navigate("/taslaklar")}
         >
-          <FiFileText size={18} aria-hidden="true" />
-          <span className="btn-label">Taslaklar</span>
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => navigate("/diary")}
-        >
-          <FiPlus size={18} aria-hidden="true" />
-          <span className="btn-label">Yeni günlük</span>
-        </button>
-      </TopBar>
-
-      {user && !user.emailVerified && (
-        <div className="notice" role="status">
-          <FiMail size={18} aria-hidden="true" />
-          <span>
-            E-posta adresin doğrulanmamış. Hesabını korumak için gelen kutunu
-            kontrol et.
+          <FiFileText size={16} aria-hidden="true" />
+          <span className="btn-text">
+            Taslaklar
+            {draftCount > 0 && <span className="num"> ({draftCount})</span>}
           </span>
-          {!verificationSent && (
-            <button type="button" className="btn btn-ghost" onClick={resendVerification}>
-              Tekrar gönder
-            </button>
-          )}
-        </div>
-      )}
+        </button>
 
-      {/* --- Özet kartları --- */}
-      <section className="stats" aria-label="Özet">
+        <button type="button" className="btn btn-primary" onClick={() => navigate("/yaz")}>
+          <FiPlus size={16} aria-hidden="true" />
+          <span className="btn-text">Yaz</span>
+        </button>
+      </Masthead>
+
+      {/* Künye satırı — dergi kolofonu gibi */}
+      <section className="colophon" aria-label="Özet">
         {[
-          { label: "Toplam günlük", value: stats.total, icon: "📚" },
-          { label: "Bu ay", value: stats.monthCount, icon: "🗓️" },
-          { label: "Yazılan gün", value: stats.dayCount, icon: "✍️" },
-          { label: "Ortalama puan", value: stats.average, icon: "⭐" },
+          { label: "Toplam", value: summary.total },
+          { label: "Bu ay", value: summary.thisMonth },
+          { label: "Yazılan gün", value: summary.days },
+          { label: "Ortalama", value: summary.average },
         ].map((item, index) => (
-          <div className="stat-card stagger" key={item.label} style={{ "--i": index }}>
-            <span className="stat-icon" aria-hidden="true">
-              {item.icon}
-            </span>
-            <div>
-              <strong>{item.value}</strong>
-              <span>{item.label}</span>
-            </div>
+          <div className="colophon-cell stagger" key={item.label} style={{ "--i": index }}>
+            <span className="num colophon-value">{item.value}</span>
+            <span className="label">{item.label}</span>
           </div>
         ))}
       </section>
 
-      {/* --- Arama ve sıralama --- */}
-      <section className="controls" aria-label="Filtreler">
-        <div className="field-row search-row">
-          <FiSearch className="field-icon" size={18} aria-hidden="true" />
-          <input
-            className="input input-with-icon"
-            type="search"
-            placeholder="Günlüklerinde ara…"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="Günlüklerde ara"
-          />
-          {search && (
-            <button
-              type="button"
-              className="password-toggle"
-              onClick={() => setSearch("")}
-              aria-label="Aramayı temizle"
+      <div className="reading-room">
+        {/* --- Ana sütun --- */}
+        <main className="column-main">
+          <div className="filters">
+            <div className="field-row filter-search">
+              <FiSearch size={15} className="filter-icon" aria-hidden="true" />
+              <input
+                className="input filter-input"
+                type="search"
+                placeholder="Günlüklerde ara"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                aria-label="Günlüklerde ara"
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="field-action"
+                  onClick={() => setSearch("")}
+                  aria-label="Aramayı temizle"
+                >
+                  <FiX size={15} />
+                </button>
+              )}
+            </div>
+
+            <select
+              className="select filter-sort"
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+              aria-label="Sıralama"
             >
-              <FiX size={18} />
-            </button>
-          )}
-        </div>
-
-        <select
-          className="select"
-          value={sortOption}
-          onChange={(event) => setSortOption(event.target.value)}
-          aria-label="Sıralama"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </section>
-
-      <div className="layout">
-        {/* --- Takvim --- */}
-        <aside className="calendar-panel card">
-          <h2 className="section-title">Takvim</h2>
-
-          <Calendar
-            locale="tr-TR"
-            value={selectedDay}
-            onClickDay={(date) => {
-              // Aynı güne tekrar tıklamak filtreyi kaldırır
-              setSelectedDay((current) =>
-                current && dayKey(current) === dayKey(date) ? null : date
-              );
-            }}
-            tileContent={({ date, view }) => {
-              if (view !== "month") return null;
-              const entry = dayIndex.get(dayKey(date));
-              if (!entry) return null;
-              return (
-                <span
-                  className={`cal-dot${entry.rating >= 4 ? " cal-dot-strong" : ""}`}
-                  aria-hidden="true"
-                />
-              );
-            }}
-            tileClassName={({ date, view }) =>
-              view === "month" && dayIndex.has(dayKey(date)) ? "has-entry" : null
-            }
-          />
+              {SORTS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {selectedDay && (
             <button
               type="button"
-              className="btn btn-ghost btn-block filter-clear"
+              className="active-filter"
               onClick={() => setSelectedDay(null)}
             >
-              <FiX size={16} aria-hidden="true" />
-              {formatLongDate(selectedDay)} filtresini kaldır
+              <span className="label">Filtre</span>
+              <span>{formatLongDate(selectedDay)}</span>
+              <FiX size={14} aria-hidden="true" />
             </button>
           )}
-        </aside>
-
-        {/* --- Günlük listesi --- */}
-        <section className="diary-panel">
-          <h2 className="section-title">
-            Günlükler
-            <span className="count">
-              {loading ? "" : `${visibleDiaries.length} kayıt`}
-            </span>
-          </h2>
 
           {loading && (
-            <div className="diary-list">
+            <div className="entry-list">
               {[0, 1, 2].map((index) => (
-                <div className="diary-card skeleton-card" key={index}>
-                  <div className="skeleton" style={{ height: 18, width: "45%" }} />
-                  <div className="skeleton" style={{ height: 12, width: "90%" }} />
-                  <div className="skeleton" style={{ height: 12, width: "70%" }} />
-                  <div className="skeleton" style={{ height: 38, width: "100%" }} />
-                </div>
+                <article className="entry" key={index}>
+                  <div className="skeleton" style={{ height: 11, width: "30%" }} />
+                  <div className="skeleton" style={{ height: 20, width: "55%", marginTop: 10 }} />
+                  <div className="skeleton" style={{ height: 12, width: "100%", marginTop: 12 }} />
+                  <div className="skeleton" style={{ height: 12, width: "78%", marginTop: 6 }} />
+                </article>
               ))}
             </div>
           )}
 
-          {!loading && visibleDiaries.length === 0 && (
-            <div className="card empty-state">
-              <span className="empty-icon" aria-hidden="true">
-                {diaries.length === 0 ? "🌱" : "🔍"}
-              </span>
+          {!loading && visible.length === 0 && (
+            <div className="empty">
+              <span className="label">{entries.length === 0 ? "Boş defter" : "Sonuç yok"}</span>
               <h3>
-                {diaries.length === 0
-                  ? "Henüz hiç günlük yok"
-                  : "Sonuç bulunamadı"}
+                {entries.length === 0
+                  ? "Henüz hiçbir şey yazmadın"
+                  : "Bu arama hiçbir şey döndürmedi"}
               </h3>
               <p>
-                {diaries.length === 0
-                  ? "İlk günlüğünü yazarak başla. Bugünün nasıl geçtiğini anlat, yıldızla puanla."
-                  : "Arama teriminizi değiştirin veya takvim filtresini kaldırın."}
+                {entries.length === 0
+                  ? "İlk sayfayı aç. Bugünün nasıl geçtiğini yaz, beş yıldız üzerinden puanla."
+                  : "Başka bir kelime dene ya da takvim filtresini kaldır."}
               </p>
-              {diaries.length === 0 && (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => navigate("/diary")}
-                >
-                  <FiPlus size={18} aria-hidden="true" />
+              {entries.length === 0 && (
+                <button type="button" className="btn btn-primary" onClick={() => navigate("/yaz")}>
+                  <FiPlus size={16} aria-hidden="true" />
                   İlk günlüğünü yaz
                 </button>
               )}
             </div>
           )}
 
-          {!loading && visibleDiaries.length > 0 && (
-            <div className="diary-list">
-              {visibleDiaries.map((diary, index) => {
-                const preview = truncate(
-                  diary.plainText || htmlToPlainText(diary.content),
-                  190
-                );
+          {!loading && visible.length > 0 && (
+            <div className="entry-list">
+              {visible.map((entry, index) => (
+                <article
+                  className="entry stagger"
+                  key={entry.id}
+                  style={{ "--i": Math.min(index, 10) }}
+                >
+                  <div className="entry-head">
+                    <span className="meta">
+                      {formatShortDate(entry.createdAt)}
+                      <span className="entry-sep">·</span>
+                      {weekday(entry.createdAt)}
+                    </span>
+                    <StarRating value={entry.rating} size={14} readOnly />
+                  </div>
 
-                return (
-                  <article
-                    className="diary-card stagger"
-                    key={diary.id}
-                    style={{ "--i": Math.min(index, 12) }}
-                  >
-                    <header className="diary-card-head">
-                      <div>
-                        <h3>{formatLongDate(diary.createdAt)}</h3>
-                        <span className="diary-meta">
-                          {formatRelative(diary.createdAt)}
-                          {diary.files?.length > 0 && (
-                            <>
-                              {" · "}
-                              <FiPaperclip size={12} aria-hidden="true" />
-                              {diary.files.length} dosya
-                            </>
-                          )}
-                        </span>
-                      </div>
+                  <h3 className="entry-title">
+                    <button type="button" onClick={() => navigate(`/gunluk/${entry.id}`)}>
+                      {formatLongDate(entry.createdAt)}
+                    </button>
+                  </h3>
 
-                      {diary.rating > 0 && (
-                        <span className="badge badge-amber" title={`${diary.rating}/5`}>
-                          <FaStar size={11} aria-hidden="true" />
-                          {diary.rating}
-                        </span>
-                      )}
-                    </header>
+                  {entry.plainText && (
+                    <p className="entry-excerpt">{truncate(entry.plainText, 220)}</p>
+                  )}
 
-                    {preview && <p className="diary-preview">{preview}</p>}
-
-                    <StarRating value={diary.rating || 0} size={15} readOnly />
-
-                    <footer className="diary-actions">
+                  <div className="entry-foot">
+                    <div className="entry-actions">
                       <button
                         type="button"
-                        className="btn"
-                        onClick={() => navigate(`/diary-view/${diary.id}`)}
+                        className="btn btn-quiet"
+                        onClick={() => navigate(`/gunluk/${entry.id}`)}
                       >
-                        <FiEye size={16} aria-hidden="true" />
                         Oku
                       </button>
+                      <span className="entry-sep">·</span>
                       <button
                         type="button"
-                        className="btn"
-                        onClick={() => downloadDiary(diary)}
+                        className="btn btn-quiet"
+                        onClick={() => download(entry)}
                       >
-                        <FiDownload size={16} aria-hidden="true" />
+                        <FiDownload size={13} aria-hidden="true" />
                         İndir
                       </button>
+                      <span className="entry-sep">·</span>
                       <button
                         type="button"
-                        className="btn btn-ghost danger-ghost"
-                        onClick={() => setPendingDelete(diary)}
-                        aria-label="Günlüğü sil"
+                        className="btn btn-quiet btn-danger"
+                        onClick={() => setPendingDelete(entry)}
                       >
-                        <FiTrash2 size={16} aria-hidden="true" />
+                        <FiTrash2 size={13} aria-hidden="true" />
                         Sil
                       </button>
-                    </footer>
-                  </article>
-                );
-              })}
+                    </div>
+
+                    {entry.files?.length > 0 && (
+                      <span className="tag">
+                        <FiPaperclip size={11} aria-hidden="true" />
+                        {entry.files.length}
+                      </span>
+                    )}
+                  </div>
+                </article>
+              ))}
             </div>
           )}
-        </section>
-      </div>
+        </main>
 
-      {/* Mobilde hızlı erişim düğmesi */}
-      <button
-        type="button"
-        className="fab"
-        onClick={() => navigate("/diary")}
-        aria-label="Yeni günlük yaz"
-        title="Yeni günlük yaz"
-      >
-        <FiPlus size={24} aria-hidden="true" />
-      </button>
+        {/* --- Yan sütun: takvim --- */}
+        <aside className="column-side">
+          <h2 className="section-head">
+            <span className="label">Takvim</span>
+          </h2>
+
+          <Calendar
+            locale="tr-TR"
+            value={selectedDay}
+            onClickDay={(date) =>
+              setSelectedDay((current) =>
+                current && dayKey(current) === dayKey(date) ? null : date
+              )
+            }
+            tileContent={({ date, view }) =>
+              view === "month" && days.has(dayKey(date)) ? (
+                <span className="cal-mark" aria-hidden="true" />
+              ) : null
+            }
+            tileClassName={({ date, view }) =>
+              view === "month" && days.has(dayKey(date)) ? "written" : null
+            }
+          />
+
+          <p className="side-note">
+            İşaretli günlerde yazılmış bir günlük var. Bir güne tıklayarak
+            listeyi o güne daraltabilirsin.
+          </p>
+        </aside>
+      </div>
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title="Günlük silinsin mi?"
+        eyebrow="Kalıcı silme"
+        title="Bu günlük silinsin mi?"
         description={
           pendingDelete
-            ? `"${formatLongDate(pendingDelete.createdAt)}" tarihli günlük ve ekli dosyaları kalıcı olarak silinecek. Bu işlem geri alınamaz.`
+            ? `${formatLongDate(pendingDelete.createdAt)} tarihli günlük ve ekli dosyaları kalıcı olarak silinecek. Geri alınamaz.`
             : undefined
         }
-        confirmLabel="Evet, sil"
         busy={deleting}
         onConfirm={confirmDelete}
         onCancel={() => !deleting && setPendingDelete(null)}

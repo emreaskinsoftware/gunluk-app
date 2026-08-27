@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Okuma ekrani — tek sutun, dergi makalesi duzeni
+   ========================================================================== */
+
+.article {
+  animation: ink-rise var(--slow) var(--ease) both;
+}
+
+.article-head {
+  padding-bottom: var(--s5);
+  margin-bottom: var(--s6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.article-head .label {
+  display: block;
+  margin-bottom: var(--s2);
+  color: var(--accent);
+}
+
+.article-head h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 4.2vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.028em;
+  margin-bottom: var(--s3);
+}
+
+.article-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* --- Gunluk metni --- */
+.prose {
+  max-width: var(--measure);
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  line-height: 1.78;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* Ilk paragrafin ilk harfi buyuk — dergi dokunusu */
+.prose > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.06em 0.08em 0 0;
+  font-size: 3.2em;
+  line-height: 0.82;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.prose > * + * {
+  margin-top: 1.05em;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 1.7em;
+}
+
+.prose h1 { font-size: 1.5rem; }
+.prose h2 { font-size: 1.28rem; }
+.prose h3 { font-size: 1.12rem; }
+
+.prose ul,
+.prose ol {
+  padding-left: 1.3em;
+}
+
+.prose li + li {
+  margin-top: 0.3em;
+}
+
+.prose blockquote {
+  padding: var(--s1) 0 var(--s1) var(--s5);
+  border-left: 2px solid var(--accent-line);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.prose pre {
+  padding: var(--s4);
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.prose code {
+  padding: 1px 5px;
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--paper-sunken);
+  border-radius: 2px;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.prose hr {
+  height: 1px;
+  border: 0;
+  background: var(--rule);
+  margin: 2em 0;
+}
+
+/* --- Ekler --- */
+.article-files {
+  margin-top: var(--s8);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--rule);
+}
+
+.article-files .section-head .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  transition: border-color var(--fast) var(--ease);
+}
+
+.file-card:hover {
+  border-color: var(--rule-strong);
+}
+
+.file-card img {
+  width: 100%;
+  height: 112px;
+  object-fit: cover;
+  display: block;
+  background: var(--paper-sunken);
+  border-radius: 2px;
+  filter: saturate(0.94);
+  transition: filter var(--base) var(--ease);
+}
+
+.file-card:hover img {
+  filter: saturate(1);
+}
+
+.file-placeholder {
+  display: grid;
+  place-items: center;
+  height: 112px;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  background: var(--paper-sunken);
+  border-radius: 2px;
+}
+
+.file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.file-meta strong {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card .btn-quiet {
+  align-self: flex-start;
+  min-height: 24px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Kucuk ekran
+   -------------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  .prose {
+    font-size: 1.02rem;
+  }
+
+  .prose > p:first-of-type::first-letter {
+    font-size: 2.8em;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Yazdirma
+   -------------------------------------------------------------------------- */
+@media print {
+  .masthead,
+  .grain,
+  .toasts,
+  .article-files .btn {
+    display: none !important;
+  }
+
+  .sheet {
+    padding: 0;
+    max-width: none;
+  }
+
+  .prose {
+    max-width: none;
+    color: #000;
+  }
+}

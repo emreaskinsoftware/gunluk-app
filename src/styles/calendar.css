@@ -1,63 +1,72 @@
 /* ==========================================================================
-   react-calendar temasi — tasarim sistemine uyarlanmis hali
+   react-calendar — kagit temasina uyarlanmis
+   Kutu ve dolgu yok; hafif bir ajanda izlenimi.
    ========================================================================== */
 
 .react-calendar {
   width: 100%;
   background: transparent;
   border: none;
-  font-family: var(--font-sans);
-  line-height: 1.4;
+  font-family: var(--sans);
+  line-height: 1.3;
 }
 
-/* --- Ust gezinme (ay/yil) --- */
+/* --- Ay gezinmesi --- */
 .react-calendar__navigation {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: var(--sp-3);
   height: auto;
+  margin-bottom: var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--rule);
 }
 
 .react-calendar__navigation button {
-  min-width: 38px;
-  height: 38px;
-  padding: 0 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
+  min-width: 30px;
+  height: 30px;
+  padding: 0 var(--s2);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-muted);
   background: transparent;
   border: none;
-  border-radius: var(--r-md);
-  transition: background-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-fast) var(--ease-spring);
+  border-radius: 2px;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
 }
 
 .react-calendar__navigation button:enabled:hover,
 .react-calendar__navigation button:enabled:focus {
-  background: var(--surface-hover);
-  transform: translateY(-1px);
+  color: var(--ink);
+  background: var(--paper-hover);
 }
 
 .react-calendar__navigation button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   background: transparent;
 }
 
 .react-calendar__navigation__label {
   flex-grow: 1;
-  font-size: 1rem !important;
-  letter-spacing: -0.01em;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink) !important;
 }
 
-/* --- Gun basliklari (Pzt, Sal ...) --- */
+/* --- Gun basliklari --- */
 .react-calendar__month-view__weekdays {
-  margin-bottom: 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
+  margin-bottom: var(--s1);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-subtle);
+  color: var(--ink-faint);
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  padding: 4px 0;
 }
 
 .react-calendar__month-view__weekdays__weekday abbr {
@@ -65,72 +74,72 @@
   cursor: default;
 }
 
-/* --- Gun kareleri --- */
+/* --- Gunler --- */
 .react-calendar__tile {
   position: relative;
   display: flex !important;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   aspect-ratio: 1 / 1;
-  padding: 2px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
   background: transparent;
   border: none;
-  border-radius: var(--r-md);
-  transition: background-color var(--dur-fast) var(--ease-out),
-    transform 200ms var(--ease-spring), color var(--dur-fast) var(--ease-out);
+  border-radius: 2px;
+  transition: color var(--fast) var(--ease), background-color var(--fast) var(--ease);
 }
 
 .react-calendar__tile:enabled:hover {
-  background: var(--surface-hover);
-  transform: scale(1.12);
-  z-index: 1;
+  color: var(--ink);
+  background: var(--paper-hover);
 }
 
 .react-calendar__month-view__days__day--neighboringMonth {
-  color: var(--text-subtle);
-  opacity: 0.5;
+  color: var(--ink-faint);
+  opacity: 0.45;
 }
 
 .react-calendar__month-view__days__day--weekend {
-  color: var(--accent-500);
+  color: var(--ink-muted);
 }
 
-/* Bugun */
+/* Bugun — altinda kalin bir cizgi */
 .react-calendar__tile--now {
-  background: rgba(251, 191, 36, 0.16);
-  color: var(--amber-500);
-  box-shadow: inset 0 0 0 1.5px rgba(251, 191, 36, 0.5);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: inset 0 -2px 0 -1px var(--ink-faint);
 }
 
-/* Secili gun */
+/* Secili gun — mürekkeple doldurulmus kare */
 .react-calendar__tile--active,
 .react-calendar__tile--active:enabled:hover,
 .react-calendar__tile--active:enabled:focus {
-  color: #fff;
-  background: var(--grad-brand);
-  box-shadow: var(--shadow-glow);
+  color: var(--paper);
+  background: var(--ink);
+  box-shadow: none;
 }
 
-.react-calendar__tile--active .cal-dot {
-  background: rgba(255, 255, 255, 0.9);
+/* Yazi yazilmis gunler */
+.react-calendar__tile.written {
+  color: var(--ink);
+  font-weight: 500;
 }
 
-/* Gunluk yazilan gunlerin altindaki nokta */
-.cal-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--brand-500);
-  animation: pop-in 320ms var(--ease-spring) both;
+/* Kayit isareti — kucuk bir mürekkep tiresi */
+.cal-mark {
+  width: 9px;
+  height: 2px;
+  background: var(--accent);
+  animation: rule-draw 320ms var(--ease) both;
 }
 
-.cal-dot-strong {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+.react-calendar__tile--active .cal-mark {
+  background: var(--paper);
 }
 
 /* Yil / on yil gorunumleri */
@@ -138,6 +147,7 @@
 .react-calendar__decade-view__years__year,
 .react-calendar__century-view__decades__decade {
   aspect-ratio: auto;
-  padding: 0.9rem 0.4rem;
-  font-size: 0.86rem;
+  padding: var(--s3) var(--s1);
+  font-family: var(--sans);
+  font-size: 0.76rem;
 }

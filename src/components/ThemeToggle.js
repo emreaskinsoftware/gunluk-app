@@ -2,23 +2,19 @@ import React from "react";
 import { FiSun, FiMoon } from "react-icons/fi";
 import { useTheme } from "../context/ThemeContext";
 
-/** Açık / koyu tema düğmesi. */
+/** Gündüz / gece düğmesi. */
 export default function ThemeToggle() {
-  const { isDark, toggle } = useTheme();
+  const { isNight, toggle } = useTheme();
 
   return (
     <button
       type="button"
-      className="theme-toggle"
+      className="theme-btn"
       onClick={toggle}
-      title={isDark ? "Açık temaya geç" : "Koyu temaya geç"}
-      aria-label={isDark ? "Açık temaya geç" : "Koyu temaya geç"}
+      title={isNight ? "Gündüz görünümü" : "Gece görünümü"}
+      aria-label={isNight ? "Gündüz görünümüne geç" : "Gece görünümüne geç"}
     >
-      {isDark ? (
-        <FiSun size={19} aria-hidden="true" />
-      ) : (
-        <FiMoon size={19} aria-hidden="true" />
-      )}
+      {isNight ? <FiSun size={17} aria-hidden="true" /> : <FiMoon size={17} aria-hidden="true" />}
     </button>
   );
 }

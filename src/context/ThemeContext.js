@@ -8,49 +8,52 @@ import React, {
 } from "react";
 
 /**
- * Açık / koyu tema yönetimi.
- * Seçim localStorage'da saklanır; hiç seçim yoksa işletim sistemi tercihine uyar.
+ * Gündüz / gece teması.
+ *
+ * "light/dark" yerine "day/night" adlandırması bilinçli: bu bir kağıt
+ * metaforu — gündüz beyaz kağıt, gece lamba ışığında kararmış kağıt.
+ * theme.css içindeki [data-theme] seçicileri de bu adları kullanır.
  */
 
 const ThemeContext = createContext(null);
-const STORAGE_KEY = "gunluk:theme";
+const STORAGE_KEY = "gunluk:tema";
 
-function readInitialTheme() {
+const PAPER_COLOR = { day: "#faf7f0", night: "#16130f" };
+
+function readInitial() {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark") return saved;
+    if (saved === "day" || saved === "night") return saved;
   } catch {
-    // Gizli sekme / depolama kapalı — sorun değil, sistem tercihine düşeriz
+    /* gizli sekme — sistem tercihine düş */
   }
 
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "night" : "day";
 }
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(readInitialTheme);
+  const [theme, setTheme] = useState(readInitial);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", theme === "dark" ? "#0b1020" : "#f6f7fb");
+      ?.setAttribute("content", PAPER_COLOR[theme]);
 
     try {
       window.localStorage.setItem(STORAGE_KEY, theme);
     } catch {
-      /* depolama yoksa yoksay */
+      /* yoksay */
     }
   }, [theme]);
 
   const toggle = useCallback(
-    () => setTheme((current) => (current === "dark" ? "light" : "dark")),
+    () => setTheme((current) => (current === "night" ? "day" : "night")),
     []
   );
 
   const value = useMemo(
-    () => ({ theme, isDark: theme === "dark", toggle, setTheme }),
+    () => ({ theme, isNight: theme === "night", toggle }),
     [theme, toggle]
   );
 
@@ -59,8 +62,6 @@ export function ThemeProvider({ children }) {
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme yalnızca <ThemeProvider> içinde kullanılabilir.");
-  }
+  if (!context) throw new Error("useTheme yalnızca <ThemeProvider> içinde kullanılabilir.");
   return context;
 }

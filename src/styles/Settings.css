@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Ayarlar
+   ========================================================================== */
+
+.settings-block {
+  padding-bottom: var(--s6);
+  margin-bottom: var(--s6);
+  border-bottom: 1px solid var(--rule);
+  animation: ink-rise var(--slow) var(--ease) both;
+}
+
+.settings-block:last-of-type {
+  border-bottom: none;
+}
+
+.settings-lede {
+  max-width: var(--measure);
+  margin-bottom: var(--s4);
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.settings-sub {
+  margin: var(--s5) 0 var(--s3);
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-width: 420px;
+  margin-top: var(--s4);
+}
+
+.settings-form .btn {
+  align-self: flex-start;
+}
+
+.settings-form .btn-block {
+  align-self: stretch;
+}
+
+/* --- Bilgi tablosu --- */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0 0 var(--s4);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--s3) var(--s4);
+  border-left: 1px solid var(--rule);
+}
+
+.facts > div:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.facts dt {
+  margin: 0;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.facts-wide dd {
+  font-size: 0.8rem;
+}
+
+/* --- Kota cubugu --- */
+.quota {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-bottom: var(--s4);
+}
+
+.quota-bar {
+  position: relative;
+  height: 4px;
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.quota-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transform-origin: left;
+  animation: rule-draw var(--slow) var(--ease) both;
+}
+
+/* --- Secim listesi --- */
+.radio-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  background: var(--paper-sunken);
+  border-left: 2px solid var(--rule-strong);
+}
+
+/* Radyo dugmesi kare degil daire gorunsun */
+.radio-row .checkbox-box {
+  border-radius: 50%;
+}
+
+/* --- Tehlikeli bolge --- */
+.danger-zone {
+  padding: var(--s5);
+  background: var(--danger-wash);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+
+.danger-zone .section-head .label {
+  color: var(--danger);
+}
+
+.danger-zone .section-head::after {
+  background: var(--danger);
+  opacity: 0.3;
+}
+
+.danger-zone .settings-lede {
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Kucuk ekran
+   -------------------------------------------------------------------------- */
+@media (max-width: 700px) {
+  .facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .facts > div {
+    padding: var(--s3);
+    border-top: 1px solid var(--rule);
+  }
+
+  .facts > div:nth-child(-n + 2) {
+    border-top: none;
+  }
+
+  .facts > div:nth-child(odd) {
+    padding-left: 0;
+    border-left: none;
+  }
+}

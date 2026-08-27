@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Kilit / kurulum ekranlari — bir kitabin ic kapagi gibi
+   ========================================================================== */
+
+.vault-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--s6) var(--s4);
+}
+
+.vault-sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  animation: ink-rise var(--slow) var(--ease) both;
+}
+
+.vault-corner {
+  position: fixed;
+  top: var(--s4);
+  right: var(--s4);
+  z-index: 2;
+}
+
+/* --- Ic kapak basligi --- */
+.vault-head {
+  padding-bottom: var(--s5);
+  margin-bottom: var(--s5);
+  text-align: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.vault-head::before {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 2px;
+  margin: 0 auto var(--s5);
+  background: var(--ink);
+  transform-origin: center;
+  animation: rule-draw var(--slow) var(--ease) 120ms both;
+}
+
+.vault-head h1 {
+  font-family: var(--serif);
+  font-size: 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: var(--s3);
+}
+
+.vault-head .label {
+  color: var(--ink-faint);
+}
+
+.vault-lede {
+  max-width: 34ch;
+  margin: var(--s4) auto 0;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* --- Form --- */
+.vault-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.vault-form .btn-lg {
+  margin-top: var(--s1);
+}
+
+/* --- Parola gucu --- */
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: ink-rise 200ms var(--ease) both;
+}
+
+.strength-track {
+  display: flex;
+  gap: 3px;
+}
+
+.strength-seg {
+  flex: 1;
+  height: 3px;
+  background: var(--rule);
+  transform-origin: left;
+  transition: background-color var(--base) var(--ease);
+}
+
+.strength-seg.on {
+  animation: rule-draw 260ms var(--ease) both;
+}
+
+.strength-0 .strength-seg.on { background: var(--danger); }
+.strength-1 .strength-seg.on { background: #b06a2c; }
+.strength-2 .strength-seg.on { background: var(--warning); }
+.strength-3 .strength-seg.on { background: #6b8a58; }
+.strength-4 .strength-seg.on { background: var(--positive); }
+
+.strength-read {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.strength-read strong {
+  font-weight: 600;
+}
+
+.strength-0 strong { color: var(--danger); }
+.strength-1 strong { color: #b06a2c; }
+.strength-2 strong { color: var(--warning); }
+.strength-3 strong { color: #5d7a4c; }
+.strength-4 strong { color: var(--positive); }
+
+/* --- Kilitlenme sayaci --- */
+.vault-lock {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--danger);
+  background: var(--danger-wash);
+  border-left: 2px solid var(--danger);
+  animation: ink-rise 220ms var(--ease) both;
+}
+
+.vault-lock svg {
+  flex-shrink: 0;
+}
+
+.vault-lock .num {
+  font-weight: 500;
+}
+
+/* --- Alt bilgi --- */
+.vault-foot {
+  margin-top: var(--s6);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.vault-foot p + p {
+  margin-top: var(--s2);
+}
+
+.vault-alt {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s4);
+}
+
+.vault-alt::before,
+.vault-alt::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.vault-alt span {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* --- Kurulum: sifreleme uyarisi --- */
+.vault-warning {
+  padding: var(--s4);
+  background: var(--warning-wash);
+  border-left: 2px solid var(--warning);
+}
+
+.vault-warning h4 {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: var(--s2);
+  color: var(--ink);
+}
+
+.vault-warning p {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.vault-warning .checkbox {
+  margin-top: var(--s3);
+}
+
+/* Gizli dosya girisi icin tetikleyici */
+.vault-restore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+@media (max-width: 700px) {
+  .vault-head h1 {
+    font-size: 2rem;
+  }
+}

@@ -4,40 +4,42 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>Günlüğüm — Kişisel Dijital Günlük</title>
+    <title>Günlük</title>
     <meta
       name="description"
-      content="Günlerini yaz, yıldızla puanla, takvimde takip et. Reklamsız, takipsiz, tamamen sana ait bir dijital günlük."
+      content="Uçtan uca şifreli kişisel günlük. Hesap yok, sunucu yok — yazdıkların cihazından çıkmaz."
     />
 
-    <meta name="theme-color" content="#f6f7fb" />
+    <meta name="theme-color" content="#faf7f0" />
     <meta name="color-scheme" content="light dark" />
 
-    <!-- Gizlilik: dış sitelere tam adres bilgisi sızdırma -->
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <!-- Arama motorlarına kişisel içerik indekslettirme -->
+    <!-- Gizlilik -->
+    <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex, nofollow" />
 
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <!-- Yazı tiplerini erkenden bağla (ilk boyama süresini kısaltır) -->
+    <!--
+      Tek dış istek: yazı tipleri. Günlük içeriği hiçbir koşulda dışarı
+      gitmez. Bu isteği de istemiyorsan README'deki "yazı tiplerini
+      yerelleştirme" bölümüne bak.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Firebase uç noktalarına DNS çözümlemesini öne al -->
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
-    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
   </head>
 
   <body>
     <noscript>
-      <div style="max-width: 520px; margin: 12vh auto; padding: 2rem; font-family: system-ui, sans-serif; text-align: center;">
-        <h1 style="font-size: 1.3rem;">JavaScript kapalı</h1>
-        <p style="color: #475569;">
-          Günlüğüm uygulamasını kullanabilmek için tarayıcı ayarlarınızdan
-          JavaScript'i etkinleştirmeniz gerekiyor.
+      <div style="max-width: 460px; margin: 14vh auto; padding: 2rem; font-family: Georgia, serif; text-align: center; color: #1a1613;">
+        <h1 style="font-size: 1.4rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase;">
+          Günlük
+        </h1>
+        <hr style="width: 40px; border: 0; border-top: 2px solid #1a1613; margin: 1.5rem auto;" />
+        <p style="color: #5c554c; line-height: 1.6;">
+          Günlükler tarayıcıda şifrelenip çözüldüğü için bu uygulama
+          JavaScript olmadan çalışamaz. Tarayıcı ayarlarından etkinleştirin.
         </p>
       </div>
     </noscript>

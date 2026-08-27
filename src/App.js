@@ -1,120 +1,117 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
+import { VaultProvider, useVault, VAULT_STATUS } from "./context/VaultContext";
 
-import AuroraBackground from "./components/AuroraBackground";
-import ConfigError from "./components/ConfigError";
+import PaperGrain from "./components/PaperGrain";
 import PageLoader from "./components/PageLoader";
-import ProtectedRoute, { PublicOnlyRoute } from "./components/ProtectedRoute";
-
-import { isFirebaseConfigured } from "./firebase";
+import RequireVault, { peekPendingPath, clearPendingPath } from "./components/RequireVault";
 
 /**
- * Sayfalar isteğe bağlı yüklenir (code splitting).
- * Zengin metin editörü (Quill) yaklaşık 200 KB; giriş ekranını açan bir
- * kullanıcının bunu indirmesi için hiçbir sebep yok.
+ * Sayfalar isteğe bağlı yüklenir. Kilit ekranını açan biri, zengin metin
+ * editörünün (~200 KB) indirilmesini beklemek zorunda kalmaz.
  */
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Unlock = lazy(() => import("./pages/Unlock"));
+const Setup = lazy(() => import("./pages/Setup"));
 const Home = lazy(() => import("./pages/Home"));
-const DiaryEntry = lazy(() => import("./pages/DiaryEntry"));
-const DiaryView = lazy(() => import("./pages/DiaryView"));
-const Drafts = lazy(() => import("./pages/Draft"));
+const Write = lazy(() => import("./pages/Write"));
+const Read = lazy(() => import("./pages/Read"));
+const Drafts = lazy(() => import("./pages/Drafts"));
+const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsupported = lazy(() => import("./pages/Unsupported"));
+
+/**
+ * Kök adres kasanın durumuna göre farklı ekran gösterir:
+ *   kasa yok      -> kurulum
+ *   kasa kilitli  -> kilit ekranı
+ *   kasa açık     -> günlük listesi
+ */
+function Gate() {
+  const { status } = useVault();
+
+  // Kilit yüzünden yarıda kalan adres varsa oraya geri dön. Değeri render
+  // sırasında okuyup efektte temizliyoruz (bkz. RequireVault > peekPendingPath).
+  const pending = status === VAULT_STATUS.UNLOCKED ? peekPendingPath() : null;
+
+  useEffect(() => {
+    if (pending) clearPendingPath();
+  }, [pending]);
+
+  switch (status) {
+    case VAULT_STATUS.CHECKING:
+      return <PageLoader label="Kasa aranıyor" />;
+    case VAULT_STATUS.UNSUPPORTED:
+      return <Unsupported />;
+    case VAULT_STATUS.EMPTY:
+      return <Setup />;
+    case VAULT_STATUS.UNLOCKED:
+      // Bir günlüğü okurken sayfa yenilendiyse listeye değil, o günlüğe dön.
+      return pending && pending !== "/" ? <Navigate to={pending} replace /> : <Home />;
+    default:
+      return <Unlock />;
+  }
+}
 
 export default function App() {
-  // .env eksikse Firebase'i hiç başlatmadan net bir kurulum ekranı göster.
-  if (!isFirebaseConfigured) {
-    return (
-      <ThemeProvider>
-        <AuroraBackground />
-        <ConfigError />
-      </ThemeProvider>
-    );
-  }
-
   return (
     <ThemeProvider>
       <ToastProvider>
-        <AuthProvider>
-          <AuroraBackground />
+        <VaultProvider>
+          <PaperGrain />
 
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* --- Herkese açık (giriş yapmışsa /home'a yönlendirilir) --- */}
-                <Route
-                  path="/"
-                  element={
-                    <PublicOnlyRoute>
-                      <Login />
-                    </PublicOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/register"
-                  element={
-                    <PublicOnlyRoute>
-                      <Register />
-                    </PublicOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/reset-password"
-                  element={
-                    <PublicOnlyRoute>
-                      <ResetPassword />
-                    </PublicOnlyRoute>
-                  }
-                />
+                <Route path="/" element={<Gate />} />
 
-                {/* --- Oturum gerektiren sayfalar --- */}
                 <Route
-                  path="/home"
+                  path="/yaz"
                   element={
-                    <ProtectedRoute>
-                      <Home />
-                    </ProtectedRoute>
+                    <RequireVault>
+                      <Write />
+                    </RequireVault>
                   }
                 />
                 <Route
-                  path="/diary"
+                  path="/gunluk/:id"
                   element={
-                    <ProtectedRoute>
-                      <DiaryEntry />
-                    </ProtectedRoute>
+                    <RequireVault>
+                      <Read />
+                    </RequireVault>
                   }
                 />
                 <Route
-                  path="/diary-view/:id"
+                  path="/taslaklar"
                   element={
-                    <ProtectedRoute>
-                      <DiaryView />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/drafts"
-                  element={
-                    <ProtectedRoute>
+                    <RequireVault>
                       <Drafts />
-                    </ProtectedRoute>
+                    </RequireVault>
+                  }
+                />
+                <Route
+                  path="/ayarlar"
+                  element={
+                    <RequireVault>
+                      <Settings />
+                    </RequireVault>
                   }
                 />
 
-                {/* Eski bağlantı uyumluluğu */}
-                <Route path="/diary-view" element={<Navigate to="/home" replace />} />
+                {/* Eski Firebase sürümünün adresleri */}
+                <Route path="/home" element={<Navigate to="/" replace />} />
+                <Route path="/diary" element={<Navigate to="/yaz" replace />} />
+                <Route path="/drafts" element={<Navigate to="/taslaklar" replace />} />
+                <Route path="/register" element={<Navigate to="/" replace />} />
+                <Route path="/reset-password" element={<Navigate to="/" replace />} />
 
-                {/* --- 404 --- */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </BrowserRouter>
-        </AuthProvider>
+        </VaultProvider>
       </ToastProvider>
     </ThemeProvider>
   );

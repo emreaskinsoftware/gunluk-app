@@ -1,24 +1,53 @@
-# 📔 Günlüğüm
+# Günlük
 
-Kişisel dijital günlük uygulaması. Günlerini zengin metin editörüyle yaz, yıldızla
-puanla, takvimde geriye dönüp bak. Reklam yok, takip yok, üçüncü taraf analitik yok.
+Uçtan uca şifreli, sunucusuz kişisel günlük.
 
-**React 18 + Firebase** ile geliştirildi ve **tamamen ücretsiz** planlarda çalışacak
-şekilde tasarlandı.
+Hesap yok. Sunucu yok. Bulut yok. Yazdıkların cihazının dışına **hiç çıkmıyor**:
+tarayıcıda AES-256-GCM ile şifreleniyor ve yine tarayıcıda saklanıyor.
+Şifre çözme anahtarı senin parolandan üretiliyor ve yalnızca bellekte duruyor.
+
+Hiçbir ücretli servise bağlı değil — ne bugün ne de ileride bir fatura üretir.
+
+```bash
+npm install && npm start
+```
+
+Kurulum bu kadar. Yapılandırma dosyası, API anahtarı, veritabanı ayarı yok.
 
 ---
 
 ## İçindekiler
 
+- [Nasıl çalışıyor](#nasıl-çalışıyor)
 - [Özellikler](#özellikler)
-- [Kurulum](#kurulum)
-- [Güvenlik kuralları (zorunlu adım)](#güvenlik-kuralları-zorunlu-adım)
-- [Ücretsiz kalmak](#ücretsiz-kalmak)
+- [Güvenlik modeli](#güvenlik-modeli)
+- [Neyi bilmen gerekiyor](#neyi-bilmen-gerekiyor)
 - [Yayına alma](#yayına-alma)
-- [Güvenlik mimarisi](#güvenlik-mimarisi)
 - [Proje yapısı](#proje-yapısı)
-- [Komutlar](#komutlar)
-- [Sorun giderme](#sorun-giderme)
+- [Tasarım](#tasarım)
+- [Sık sorulanlar](#sık-sorulanlar)
+
+---
+
+## Nasıl çalışıyor
+
+```
+   parolan
+      │
+      ▼  PBKDF2-SHA256 · 600.000 tur
+   anahtar ──────────────► yalnızca BELLEKTE
+      │                    (diske hiç yazılmaz)
+      ▼  AES-256-GCM
+   şifreli günlük ───────► IndexedDB (bu tarayıcı)
+
+   yedek: dışa aktar → gunluk-yedek-....json (yine şifreli)
+```
+
+Uygulama açıldığında kasa kilitlidir. Parolanı girersin, anahtar yeniden
+türetilir (~0,3 sn), günlükler çözülür. Sekmeyi kapattığında anahtar yok olur.
+
+**Ağ trafiği:** İlk yüklemede uygulama dosyaları ve Google Fonts'tan yazı
+tipleri. Sonrası yok. Günlük içeriği hiçbir koşulda bir isteğe konmaz.
 
 ---
 
@@ -26,198 +55,122 @@ puanla, takvimde geriye dönüp bak. Reklam yok, takip yok, üçüncü taraf ana
 
 | | |
 |---|---|
-| ✍️ **Zengin metin editörü** | Başlık, kalın/italik, renk, liste, alıntı, kod bloğu |
-| ⭐ **Günlük puanlama** | Her güne 1–5 yıldız; klavyeyle de kullanılabilir |
-| 📅 **Takvim görünümü** | Yazdığın günler işaretli; bir güne tıklayınca liste filtrelenir |
-| 🔍 **Tam metin arama** | Sadece tarihte değil, günlük içeriğinde de arar |
-| 📎 **Dosya ekleri** | Resim, ses, PDF, TXT — boyut ve tür denetimli |
-| 📝 **Taslaklar** | Yarım kalan yazılar 24 saat saklanır, sonra gerçekten silinir |
-| 🌗 **Açık / koyu tema** | Sistem tercihini algılar, seçim hatırlanır |
-| ⬇️ **Dışa aktarma** | Günlüğü `.txt` olarak indir |
-| ♿ **Erişilebilirlik** | Klavye navigasyonu, odak halkaları, `prefers-reduced-motion` desteği |
-| 📱 **Mobil uyumlu** | Tek elle kullanılabilir yerleşim, hızlı erişim düğmesi |
+| **Şifreli kasa** | AES-256-GCM · PBKDF2 600.000 tur · anahtar yalnızca bellekte |
+| **Zengin metin** | Başlık, kalın/italik, liste, alıntı, kod, bağlantı |
+| **Günlük puanlama** | 1–5 yıldız, klavyeyle de kullanılabilir |
+| **Takvim** | Yazılan günler işaretli; bir güne tıklayınca liste daralır |
+| **Tam metin arama** | Tarihte ve günlük metninde arar |
+| **Dosya ekleri** | Resim, ses, PDF, TXT — bunlar da şifrelenir |
+| **Taslaklar** | 24 saat saklanır, sonra **gerçekten** silinir |
+| **Şifreli yedek** | Tek `.json` dosyası; başka cihazda aynı parolayla açılır |
+| **Otomatik kilit** | 10 dakika işlem yapılmazsa kasa kilitlenir |
+| **Gündüz / gece** | Sistem tercihini algılar, seçim hatırlanır |
+| **Çevrimdışı** | İnternet olmadan çalışır |
+| **Erişilebilirlik** | Klavye navigasyonu, odak halkaları, `prefers-reduced-motion` |
 
 ---
 
-## Kurulum
+## Güvenlik modeli
 
-### 1. Gereksinimler
+### Neye karşı koruyor
 
-- Node.js 18 veya üzeri
-- Ücretsiz bir [Firebase](https://console.firebase.google.com) hesabı
-
-### 2. Projeyi indir ve bağımlılıkları kur
-
-```bash
-git clone https://github.com/emreaskinsoftware/gunluk-app.git
-```
-
-```bash
-cd gunluk-app && npm install
-```
-
-### 3. Firebase projesi oluştur
-
-1. [Firebase Console](https://console.firebase.google.com) → **Proje ekle**
-2. **Build → Authentication → Get started → Sign-in method → E-posta/Parola**'yı etkinleştir
-3. **Build → Firestore Database → Create database** → *production mode* seç
-4. (İsteğe bağlı, dosya ekleri için) **Build → Storage → Get started**
-5. **⚙️ Proje ayarları → Genel → Uygulamalarınız → Web (`</>`)** ile bir web uygulaması ekle
-
-### 4. Ortam değişkenlerini ayarla
-
-```bash
-cp .env.example .env
-```
-
-`.env` dosyasını aç ve Firebase Console'daki `firebaseConfig` değerlerini yapıştır.
-Eksik bırakırsan uygulama açıldığında ne yapman gerektiğini anlatan bir kurulum
-ekranı gösterir (beyaz ekran vermez).
-
-### 5. Çalıştır
-
-```bash
-npm start
-```
-
----
-
-## Güvenlik kuralları (zorunlu adım)
-
-> ⚠️ **Bu adımı atlarsan uygulama çalışmaz.** Firestore sorguları dizin (index)
-> gerektirir ve varsayılan kurallar tüm erişimi reddeder.
-
-```bash
-npm install -g firebase-tools
-```
-
-```bash
-firebase login && firebase use --add
-```
-
-```bash
-npm run rules:deploy
-```
-
-Bu komut üç şeyi birden yayınlar:
-
-| Dosya | Görevi |
+| Tehdit | Koruma |
 |---|---|
-| `firestore.rules` | Kimin hangi veriyi okuyup yazabileceği |
-| `firestore.indexes.json` | `userId + createdAt` bileşik dizinleri |
-| `storage.rules` | Dosya sahipliği, boyut ve MIME tipi denetimi |
+| Bilgisayarını eline geçiren biri | Kayıtlar diskte şifreli. Parola olmadan okunamaz. |
+| Tarayıcı profilini kopyalayan biri | IndexedDB'de yalnızca şifreli veri var (aşağıda kanıt). |
+| Kaba kuvvetle parola denemesi | Her deneme PBKDF2 nedeniyle ~0,3 sn. Üstüne 5 yanlıştan sonra katlanan kilit (20 sn → 30 dk). |
+| Açık bırakılmış ekran | 10 dakika hareketsizlikte otomatik kilit. |
+| Kayıtlı içerikteki zararlı HTML (stored XSS) | İçerik **hem yazarken hem okurken** DOMPurify ile temizlenir. Katı beyaz liste; `<script>`, `<iframe>`, `<img onerror>`, `javascript:` ve SVG/MathML tamamen elenir. |
+| Sunucu sızıntısı / veri ihlali | Sunucu yok. |
+| Şirketin verini okuması | Veri şirkete hiç ulaşmıyor. |
 
-Dosya eklerini kullanacaksan CORS ayarını da uygula (`cors.json` içindeki alan
-adını kendi adresinle değiştir):
+### Diskte gerçekten ne duruyor
 
-```bash
-gsutil cors set cors.json gs://SENIN-BUCKET-ADIN.firebasestorage.app
+Şifrelemenin çalıştığını kendin doğrulayabilirsin: tarayıcıda
+**F12 → Application → IndexedDB → gunluk → entries**. Bir kaydın içi şöyledir:
+
+```js
+{
+  id: "255188dd-…",
+  kind: "diary",
+  createdAt: 1787...,   // takvim ve sıralama için açık
+  rating: 4,            // takvim işaretleri için açık
+  cipher: { iv: Uint8Array(12), data: Uint8Array(382) }   // ← yazdığın her şey
+}
 ```
+
+Yazdığın metin, dosya adları ve dosya içerikleri `cipher` içinde. Açıkta kalan
+tek şey tarih ve puan — bunlar takvimi ve sıralamayı çözmeden yapabilmek için.
+
+### Ek katmanlar
+
+- **Content-Security-Policy** `script-src 'self'` kadar sıkı (satır içi betik
+  yok — bkz. `.env.production`), `connect-src 'self'`, `frame-ancestors 'none'`
+- `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, HSTS
+- Dosya yüklemede MIME tipi **ve** uzantı birlikte denetlenir
+- Dosya adlarında yalnızca harf/rakam/güvenli noktalama kalır (yol geçişi, kontrol karakterleri elenir)
+- `noindex, nofollow` — kişisel içerik arama motorlarına düşmez
+- Kaynak haritaları üretim derlemesinde kapalı
+
+### Neye karşı korumaz
+
+Dürüst olmak gerekirse:
+
+- **Cihazındaki bir zararlı yazılım** kasa açıkken belleği okuyabilir.
+- **Zayıf bir parola** şifrelemeyi anlamsızlaştırır. Birkaç kelimelik bir cümle kullan.
+- **Kilit açıkken** ekranına bakan biri günlüklerini okur.
+- Tarayıcı eklentileri sayfa içeriğine erişebilir.
 
 ---
 
-## Ücretsiz kalmak
+## Neyi bilmen gerekiyor
 
-Bu proje **hiçbir ücretli servis kullanmaz**. Maliyet çıkmaması için alınan
-önlemler:
+> ### ⚠ Parolanı unutursan veriler kurtarılamaz
+>
+> Anahtar yalnızca senin parolandan üretiliyor ve hiçbir yerde saklanmıyor.
+> "Parolamı sıfırla" diye bir şey yok — çünkü sıfırlayacak bir sunucu yok.
+> Bu, tasarımın bir sonucu, eksiği değil.
 
-- **Firebase Data Connect kaldırıldı.** Eski sürümde bulunan `dataconnect/`
-  klasörü, ücretli bir **Cloud SQL** örneği gerektiriyordu. İçi tamamen örnek
-  yorum satırlarından oluşuyordu ve hiç kullanılmıyordu.
-- **Sorgu başına 200 kayıt sınırı.** Sıralama ve filtreleme tarayıcıda yapılır;
-  her sıralama değişikliğinde yeniden okuma yapılmaz.
-- **Tek bileşik dizin.** Dört ayrı sıralama sorgusu yerine tek sorgu kullanılır.
-- **Dosya sınırları.** Dosya başına 5 MB, günlük başına 5 dosya (hem istemcide
-  hem `storage.rules` içinde zorunlu).
-- **Silinen günlüğün dosyaları da silinir.** Yetim dosyalar kotada birikmez.
-- **Süresi dolan taslaklar gerçekten silinir.**
+> ### ⚠ Tarayıcı verisi silinirse günlükler gider
+>
+> "Site verilerini temizle", "geçmişi sil" veya tarayıcı profilini silmek
+> kasayı da siler. **Düzenli olarak Ayarlar → Şifreli yedek indir** yap ve
+> dosyayı güvenli bir yerde tut.
+>
+> Uygulama ilk kurulumda tarayıcıdan veriyi *kalıcı* işaretlemesini ister
+> (`navigator.storage.persist`). Tarayıcı bu izni vermezse Ayarlar sayfasında
+> uyarı görürsün.
 
-### Storage kullanmadan çalıştırmak
-
-Firebase Storage **yeni projelerde Blaze (kredi kartı) planı** ister. Spark
-(ücretsiz) planda kalmak istiyorsan `.env` dosyasında:
-
-```
-REACT_APP_ENABLE_ATTACHMENTS=false
-```
-
-Bu durumda dosya ekleme arayüzü kapanır, Storage servisi hiç başlatılmaz ve
-uygulamanın geri kalanı sorunsuz çalışır.
-
-### Ücretsiz kota (Spark planı)
-
-| Kaynak | Günlük ücretsiz sınır |
-|---|---|
-| Firestore okuma | 50.000 |
-| Firestore yazma | 20.000 |
-| Firestore depolama | 1 GiB |
-| Authentication | Sınırsız (e-posta/parola) |
-
-Kişisel kullanımda bu sınırlara yaklaşmak neredeyse imkânsızdır.
+> ### ℹ Cihazlar arası otomatik senkron yok
+>
+> Sunucu olmadığı için telefonun ve bilgisayarın kendiliğinden eşitlenmez.
+> Taşıma yolu: bir cihazda **yedek indir**, diğerinde **yedekten geri yükle**.
 
 ---
 
 ## Yayına alma
 
-Her iki seçenek de ücretsiz plan sunar.
+Statik bir site olduğu için her yerde ücretsiz barınır.
 
 ### Vercel
 
-Depoyu Vercel'e bağlaman yeterli. `vercel.json` dosyası şunları hazır getirir:
+Depoyu bağla, hazır. `vercel.json` şunları getirir: SPA yönlendirmesi,
+güvenlik başlıkları (CSP dahil), statik dosyalar için uzun önbellek.
+Ortam değişkeni girmene gerek yok — uygulamanın hiç yok.
 
-- SPA yönlendirmesi (sayfa yenilenince 404 olmaz)
-- **Content-Security-Policy**, `X-Frame-Options`, `HSTS`, `Referrer-Policy` başlıkları
-- Statik dosyalar için uzun süreli önbellek
-
-Ortam değişkenlerini **Settings → Environment Variables** bölümüne eklemeyi unutma.
-
-### Firebase Hosting
+### GitHub Pages / Netlify / herhangi bir statik sunucu
 
 ```bash
-npm run build && firebase deploy --only hosting
+npm run build
 ```
 
----
+`build/` klasörünü yayınla. Tek gereklilik: bilinmeyen adresleri
+`index.html`'e yönlendiren bir kural (SPA yönlendirmesi).
 
-## Güvenlik mimarisi
+### Sadece kendi bilgisayarında
 
-Uygulama **sıfır güven (zero-trust)** ilkesiyle kurgulanmıştır: istemci kodu her
-zaman atlatılabilir kabul edilir, asıl denetim sunucu tarafındadır.
-
-### Sunucu tarafı (atlatılamaz)
-
-| Katman | Ne yapar |
-|---|---|
-| `firestore.rules` | Her kayıt sahibine kilitli. Liste sorguları `userId` filtresi ve `limit()` olmadan **çalışmaz**. İçerik boyutu, puan aralığı ve dosya sayısı sunucuda doğrulanır. Fazladan alan eklenemez. |
-| `storage.rules` | Dosyalar `users/{uid}/...` altında. Başkasının klasörüne yazma/okuma yok. 5 MB üst sınır ve MIME tipi beyaz listesi. `text/html` yüklenip depolama üzerinden XSS servis edilmesi engellenir. |
-| HTTP başlıkları | CSP, HSTS, `X-Frame-Options: DENY` (clickjacking), `nosniff`, kısıtlayıcı `Permissions-Policy`. |
-
-### İstemci tarafı (savunma derinliği)
-
-| Katman | Ne yapar |
-|---|---|
-| **XSS temizliği** | Zengin metin, DOMPurify ile **hem kaydederken hem ekrana basarken** temizlenir. Katı beyaz liste: `<script>`, `<iframe>`, `<img onerror>`, `javascript:` bağlantıları ve SVG/MathML tamamen elenir. |
-| **Rota koruması** | Oturum gerektiren sayfalar `ProtectedRoute` ile sarmalıdır; giriş yapmış kullanıcı giriş sayfasını göremez. |
-| **Deneme sınırlaması** | 5 başarısız girişten sonra kademeli kilit (30 sn → 15 dk). |
-| **Hesap numaralandırma koruması** | "Kullanıcı yok" ile "parola yanlış" aynı mesajı döndürür. Parola sıfırlama, adresin kayıtlı olup olmadığını sızdırmaz. |
-| **Hareketsizlik kilidi** | 30 dakika işlem yapılmazsa oturum otomatik kapanır. |
-| **Oturum kalıcılığı** | "Beni hatırla" işaretlenmezse oturum sekme kapanınca biter (ortak bilgisayarlar için). |
-| **Parola politikası** | En az 8 karakter + harf + rakam; yaygın parolalar reddedilir; canlı güç göstergesi. |
-| **E-posta doğrulama** | Kayıtta doğrulama bağlantısı gönderilir, doğrulanmamış hesaplar uyarılır. |
-| **Dosya doğrulama** | MIME tipi **ve** uzantı birlikte kontrol edilir; biri sahteyse diğeri yakalar. |
-| **Dosya adı temizliği** | Yol geçişi (`../`) ve kontrol karakterleri elenir; yalnızca harf/rakam/güvenli noktalama kalır. |
-| **Hata mesajları** | Ham Firebase hataları kullanıcıya gösterilmez; iç yapı sızdırılmaz. |
-| **`noindex`** | Kişisel içerik arama motorlarına indekslenmez. |
-
-> **Firebase Web API anahtarı gizli değildir.** Firebase SDK bu anahtarı zaten
-> tarayıcıya gönderir; sızması bir güvenlik açığı değildir. Güvenlik tamamen
-> yukarıdaki kural dosyalarından gelir. Yine de `.env` deposu commit edilmez.
-
-### Önerilen Firebase Console ayarları
-
-- **Authentication → Settings → E-posta numaralandırma korumasını etkinleştir**
-- **Authentication → Settings → Yetkili alan adları**: yalnızca kendi alan adını bırak
-- **App Check** (isteğe bağlı, ücretsiz): reCAPTCHA ile bot koruması
+Yayınlamak zorunda değilsin. `npm start` yeterli — hatta internet bağlantısı
+olmadan da çalışır.
 
 ---
 
@@ -225,72 +178,114 @@ zaman atlatılabilir kabul edilir, asıl denetim sunucu tarafındadır.
 
 ```
 src/
-├── components/          Yeniden kullanılabilir arayüz parçaları
-│   ├── AuthLayout.js        Giriş/kayıt ekranlarının ortak çerçevesi
-│   ├── AuroraBackground.js  Animasyonlu arka plan
-│   ├── ConfigError.js       .env eksikse gösterilen kurulum ekranı
-│   ├── ConfirmDialog.js     Erişilebilir onay penceresi
-│   ├── ErrorBoundary.js     Beklenmeyen hatalarda beyaz ekran yerine mesaj
-│   ├── ProtectedRoute.js    Rota koruması
-│   ├── StarRating.js        Yıldız puanlama (sıfır bağımlılık)
-│   ├── ThemeToggle.js       Açık/koyu tema düğmesi
-│   └── TopBar.js            Yapışkan üst çubuk
-├── context/             Uygulama geneli durum
-│   ├── AuthContext.js       Oturum + hareketsizlik kilidi
-│   ├── ThemeContext.js      Tema tercihi
-│   └── ToastContext.js      Bildirimler (alert() yerine)
+├── lib/
+│   ├── crypto.js        PBKDF2 + AES-GCM (Web Crypto API)
+│   └── idb.js           IndexedDB sarmalayıcı (bağımlılık yok)
+├── services/
+│   └── vault.js         Kasa: kur / aç / oku / yaz / yedekle
+├── context/
+│   ├── VaultContext.js  Kasa durumu + hareketsizlik kilidi
+│   ├── ThemeContext.js  Gündüz / gece
+│   └── ToastContext.js  Bildirimler (alert() yerine)
 ├── hooks/
-│   └── useLoginThrottle.js  Giriş deneme sınırlaması
-├── pages/               Rota bileşenleri
-├── services/            Firebase erişim katmanı
-│   ├── diaries.js           Firestore okuma/yazma (her sorgu userId ile sınırlı)
-│   └── storage.js           Dosya yükleme/silme
-├── styles/              Tasarım sistemi + sayfa stilleri
-│   └── theme.css            Tüm renk, boşluk, animasyon değişkenleri
-└── utils/
-    ├── errors.js            Firebase hata kodları → Türkçe mesaj
-    ├── format.js            Tarih/sayı biçimlendirme
-    ├── sanitize.js          XSS temizliği
-    └── validation.js        Girdi doğrulama kuralları
+│   └── useUnlockThrottle.js   Deneme sınırlaması
+├── components/          Masthead, StarRating, ConfirmDialog, RequireVault …
+├── pages/
+│   ├── Setup.js         İlk kurulum (parola belirleme)
+│   ├── Unlock.js        Kilit ekranı
+│   ├── Home.js          Günlük listesi + takvim
+│   ├── Write.js         Editör
+│   ├── Read.js          Okuma
+│   ├── Drafts.js        Taslaklar
+│   └── Settings.js      Yedek, parola, kasayı sil
+├── styles/
+│   └── theme.css        Tüm renk / ölçü / hareket değerleri
+└── utils/               sanitize · validation · format · errors
 ```
+
+**Bağımlılıklar (10 adet):** react, react-dom, react-router-dom,
+react-quill-new, react-calendar, react-icons, date-fns, dompurify,
+web-vitals, react-scripts.
+
+Şifreleme ve veritabanı için ek paket kullanılmıyor — ikisi de tarayıcının
+kendi API'leri.
+
+---
+
+## Tasarım
+
+Yön: **basılı defter / edebiyat dergisi**.
+
+| Kural | |
+|---|---|
+| Gradyan | yok |
+| Cam efekti (backdrop-blur) | yok |
+| Kutu gölgesi | yalnızca modalda, o da çok kısık |
+| Köşe yarıçapı | en fazla 3px |
+| Ayırıcı | kutu değil, saç teli çizgi |
+| Aksan rengi | tek: kiremit `#9c4221` |
+| Gövde metni | serif (Source Serif 4) |
+| Arayüz etiketleri | sans, büyük harf, harf aralıklı (IBM Plex Sans) |
+| Tarih ve sayılar | monospace, hizalı (IBM Plex Mono) |
+| Hareket | 4–8px kayma, çizgi çizilmesi, mürekkep dolması |
+
+Gece teması siyah değil: lamba ışığında kararmış kağıt.
+
+Tüm animasyonlar `prefers-reduced-motion` tercihine uyar ve yalnızca
+`transform` / `opacity` üzerinden çalışır.
+
+### Yazı tiplerini yerelleştirme
+
+Tek dış istek Google Fonts'a gidiyor. Bunu da istemiyorsan:
+
+1. [google-webfonts-helper](https://gwfh.mranftl.com) ile `Source Serif 4`,
+   `IBM Plex Sans`, `IBM Plex Mono` woff2 dosyalarını indir
+2. `public/fonts/` altına koy
+3. `src/styles/theme.css` içindeki `@import` satırını `@font-face`
+   tanımlarıyla değiştir
+4. `vercel.json` içindeki CSP'den `fonts.googleapis.com` ve
+   `fonts.gstatic.com` satırlarını sil
+
+---
+
+## Sık sorulanlar
+
+**Verilerim gerçekten sunucuya gitmiyor mu?**
+Gitmiyor. Ağ isteği yapan hiçbir kod yok. Tarayıcının Network sekmesini açık
+tutup günlük yazabilirsin — uygulama dosyaları ve yazı tipleri dışında istek
+görmezsin.
+
+**Parolamı değiştirebilir miyim?**
+Evet. Ayarlar → Parola. Tüm kayıtlar yeni anahtarla baştan şifrelenir.
+*Eski yedek dosyaların eski parolayla açılmaya devam eder.*
+
+**Ne kadar yer kaplayabilir?**
+Tarayıcının verdiği kota kadar (genellikle diskin %10'u, birkaç GB).
+Ayarlar sayfasında ne kadar kullandığını görürsün. Dosya başına 5 MB,
+günlük başına 5 dosya sınırı var.
+
+**Gizli sekmede çalışır mı?**
+Çalışır ama sekmeyi kapattığında her şey silinir. Kalıcı kullanım için
+normal pencere kullan.
+
+**Aynı cihazda iki farklı kasa olur mu?**
+Olmaz — tarayıcı profili başına bir kasa. İkinci bir kasa için farklı bir
+tarayıcı profili kullan.
+
+**Eski Firebase sürümündeki verilerim ne olacak?**
+Bu sürüm Firebase'i tamamen kaldırdı. Eski verilerin Firestore konsolunda
+duruyorsa dışa aktarıp elle taşıman gerekir; otomatik göç yolu yok.
 
 ---
 
 ## Komutlar
 
-| Komut | Açıklama |
+| Komut | |
 |---|---|
 | `npm start` | Geliştirme sunucusu (http://localhost:3000) |
-| `npm run build` | Üretim derlemesi (`build/` klasörü) |
-| `npm test` | Testleri çalıştır |
-| `npm run rules:deploy` | Firestore kuralları + dizinleri + Storage kuralları yayınla |
-| `npm run emulators` | Firebase emülatörlerini yerelde başlat |
+| `npm run build` | Üretim derlemesi (`build/`) |
+| `npm test` | Testler |
 
 ---
-
-## Sorun giderme
-
-**"Kurulum tamamlanmamış" ekranı görüyorum**
-`.env` dosyası yok veya eksik. `.env.example` dosyasını kopyalayıp doldur,
-ardından sunucuyu **yeniden başlat** (CRA ortam değişkenlerini yalnızca
-başlangıçta okur).
-
-**"Veritabanı dizini eksik" hatası**
-`npm run rules:deploy` komutunu çalıştır. Dizinlerin oluşması birkaç dakika sürebilir.
-
-**"Bu işlem için yetkiniz yok"**
-Güvenlik kuralları yayınlanmamış olabilir. `npm run rules:deploy` çalıştır.
-
-**Dosya yükleme başarısız**
-Firebase Storage etkinleştirilmemiş olabilir (Blaze planı gerektirir).
-`.env` dosyasında `REACT_APP_ENABLE_ATTACHMENTS=false` yaparak özelliği kapatabilirsin.
-
-**Günlükler listelenmiyor**
-Tarayıcı konsolunu aç. `failed-precondition` görüyorsan dizin eksiktir;
-`permission-denied` görüyorsan kurallar yayınlanmamıştır.
-
----
-
-## Lisans
 
 Kişisel kullanım için. — [emreaskinsoftware](https://github.com/emreaskinsoftware)

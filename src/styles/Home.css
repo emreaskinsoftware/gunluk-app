@@ -1,331 +1,298 @@
 /* ==========================================================================
-   Ana sayfa
+   Gunluk listesi
+   --------------------------------------------------------------------------
+   Kart yok. Kayitlar bir dergi icindekiler sayfasi gibi, aralarinda sac teli
+   cizgilerle akan bir liste halinde dizilir.
    ========================================================================== */
 
-/* --- Dogrulama uyarisi --- */
-.notice {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-  padding: 0.8rem 1rem;
-  margin-bottom: var(--sp-5);
-  font-size: 0.88rem;
-  color: var(--amber-500);
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.28);
-  border-radius: var(--r-lg);
-  animation: fade-up 460ms var(--ease-out) 80ms both;
-}
-
-.notice span {
-  flex: 1;
-  min-width: 200px;
-  color: var(--text-muted);
-}
-
-/* --- Ozet kartlari --- */
-.stats {
+/* --- Kunye satiri --- */
+.colophon {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: var(--s6);
 }
 
-.stat-card {
+.colophon-cell {
   display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
-  background: var(--surface-raised);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--dur) var(--ease-spring),
-    box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s3) var(--s4);
+  border-left: 1px solid var(--rule);
 }
 
-.stat-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--brand-300);
-  box-shadow: var(--shadow-md);
+.colophon-cell:first-child {
+  padding-left: 0;
+  border-left: none;
 }
 
-.stat-icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  font-size: 1.25rem;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  transition: transform var(--dur) var(--ease-spring);
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.12) rotate(-8deg);
-}
-
-.stat-card strong {
-  display: block;
+.colophon-value {
   font-size: 1.5rem;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-}
-
-.stat-card span {
-  font-size: 0.78rem;
-  color: var(--text-subtle);
   font-weight: 500;
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
-/* --- Arama / siralama --- */
-.controls {
-  display: flex;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-5);
-  flex-wrap: wrap;
-}
-
-.search-row {
-  flex: 1;
-  min-width: 220px;
-}
-
-.search-row .input {
-  padding-right: 3rem;
-}
-
-.controls .select {
-  width: auto;
-  min-width: 165px;
-}
-
-/* --- Iki sutunlu yerlesim --- */
-.layout {
+/* --- Iki sutun --- */
+.reading-room {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: var(--sp-5);
+  grid-template-columns: minmax(0, 1fr) 264px;
+  gap: var(--s7);
   align-items: start;
 }
 
-/* --- Takvim paneli (sayfa kaydirilirken sabit kalir) --- */
-.calendar-panel {
-  position: sticky;
-  top: calc(var(--header-h) + var(--sp-4));
-  padding: var(--sp-5);
-  animation: fade-up 520ms var(--ease-out) 120ms both;
-}
-
-.calendar-panel .section-title {
-  margin-bottom: var(--sp-3);
-}
-
-.filter-clear {
-  margin-top: var(--sp-4);
-  font-size: 0.82rem;
-  color: var(--brand-500);
-}
-
-.react-calendar__tile.has-entry {
-  font-weight: 800;
-}
-
-/* --- Gunluk listesi --- */
-.diary-panel {
+.column-main {
   min-width: 0;
 }
 
-.diary-list {
+/* --- Filtreler --- */
+.filters {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
+  gap: var(--s3);
+  padding-bottom: var(--s4);
+  margin-bottom: var(--s2);
+  border-bottom: 1px solid var(--rule);
 }
 
-.diary-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-5);
-  background: var(--surface-raised);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-  transition: transform var(--dur) var(--ease-spring),
-    box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+.filter-search {
+  flex: 1;
+  min-width: 0;
 }
 
-/* Sol kenardaki renkli seritin acilisi */
-.diary-card::before {
-  content: "";
+.filter-icon {
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--grad-brand);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform var(--dur) var(--ease-out);
-}
-
-.diary-card:hover::before {
-  transform: scaleY(1);
-}
-
-.diary-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--brand-300);
-  box-shadow: var(--shadow-lg);
-}
-
-.diary-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-
-.diary-card h3 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 3px;
-}
-
-.diary-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.78rem;
-  color: var(--text-subtle);
-}
-
-.diary-preview {
-  font-family: var(--font-serif);
-  font-size: 0.95rem;
-  line-height: 1.65;
-  color: var(--text-muted);
-}
-
-.diary-actions {
-  display: flex;
-  gap: var(--sp-2);
-  flex-wrap: wrap;
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--border);
-}
-
-.diary-actions .btn {
-  padding: 0.55rem 0.9rem;
-  min-height: 38px;
-  font-size: 0.86rem;
-}
-
-.danger-ghost {
-  color: var(--danger-500);
-  margin-left: auto;
-}
-
-.danger-ghost:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--danger-600);
-}
-
-/* Yukleme iskeleti */
-.skeleton-card {
-  gap: var(--sp-3);
+  color: var(--ink-faint);
   pointer-events: none;
 }
 
-.skeleton-card:hover {
-  transform: none;
-  box-shadow: var(--shadow-sm);
-}
-
-/* --- Mobil hizli erisim dugmesi --- */
-.fab {
-  position: fixed;
-  right: var(--sp-4);
-  bottom: var(--sp-4);
-  z-index: 90;
-  display: none;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  color: #fff;
-  background: var(--grad-brand);
+/* Arama kutusu bir kutu degil, altinda cizgi olan bir satir */
+.filter-input {
+  padding-left: 24px;
+  padding-right: 34px;
+  background: transparent;
   border: none;
-  border-radius: var(--r-full);
-  box-shadow: var(--shadow-glow);
-  transition: transform var(--dur) var(--ease-spring);
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  font-family: var(--sans);
 }
 
-.fab:hover {
-  transform: scale(1.08) rotate(90deg);
+.filter-input:hover {
+  border-bottom-color: var(--rule);
 }
 
-.fab:active {
-  transform: scale(0.95);
+.filter-input:focus {
+  box-shadow: none;
+  border-bottom-color: var(--accent);
+  background: transparent;
+}
+
+.filter-sort {
+  width: auto;
+  min-width: 148px;
+  min-height: 38px;
+  background: transparent;
+  border-color: transparent;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+.filter-sort:hover {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+/* Etkin takvim filtresi */
+.active-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s4) 0 0;
+  padding: var(--s1) var(--s3) var(--s1) var(--s2);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--ink);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius);
+  animation: ink-rise 220ms var(--ease) both;
+  transition: background-color var(--fast) var(--ease);
+}
+
+.active-filter:hover {
+  background: var(--paper-hover);
+}
+
+.active-filter .label {
+  color: var(--accent);
+}
+
+/* --- Kayit listesi --- */
+.entry-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry {
+  padding: var(--s5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.entry:first-child {
+  padding-top: var(--s5);
+}
+
+.entry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.entry-sep {
+  margin: 0 6px;
+  color: var(--ink-faint);
+}
+
+/* Baslik bir dugme ama link gibi davranir */
+.entry-title {
+  margin-bottom: var(--s2);
+}
+
+.entry-title button {
+  padding: 0;
+  font-family: var(--serif);
+  font-size: 1.32rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  text-align: left;
+  color: var(--ink);
+  background: none;
+  border: none;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--base) var(--ease), color var(--fast) var(--ease);
+}
+
+.entry-title button:hover {
+  color: var(--accent);
+  background-size: 100% 1px;
+}
+
+.entry-excerpt {
+  max-width: var(--measure);
+  margin-bottom: var(--s4);
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.entry-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.entry-actions .btn-quiet {
+  min-height: 26px;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entry-actions .btn-quiet::after {
+  bottom: 3px;
+}
+
+/* --- Yan sutun --- */
+.column-side {
+  position: sticky;
+  top: var(--s5);
+}
+
+.column-side .section-head {
+  margin-bottom: var(--s3);
+}
+
+.side-note {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--ink-faint);
 }
 
 /* --------------------------------------------------------------------------
-   Uyarlanabilir yerlesim
+   Kucuk ekran
    -------------------------------------------------------------------------- */
-@media (max-width: 980px) {
-  .layout {
+@media (max-width: 900px) {
+  .reading-room {
     grid-template-columns: 1fr;
+    gap: var(--s6);
   }
 
-  .calendar-panel {
+  /* Takvim mobilde once degil, sonra gelsin */
+  .column-side {
     position: static;
+    order: 2;
+    padding-top: var(--s5);
+    border-top: 1px solid var(--rule);
+  }
+
+  .column-main {
+    order: 1;
   }
 }
 
-@media (max-width: 720px) {
-  .stats {
+@media (max-width: 700px) {
+  .colophon {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .stat-card {
-    padding: var(--sp-3);
+  .colophon-cell {
+    padding: var(--s3);
+    border-top: 1px solid var(--rule);
   }
 
-  .stat-card strong {
-    font-size: 1.25rem;
+  .colophon-cell:nth-child(-n + 2) {
+    border-top: none;
   }
 
-  /* Ust bardaki dugme metinleri yer kaplamasin, ikonlar kalsin */
-  .btn-label,
-  .logout-label {
-    display: none;
+  .colophon-cell:nth-child(odd) {
+    padding-left: 0;
+    border-left: none;
   }
 
-  .topbar-actions .btn {
-    padding: 0.7rem;
+  .colophon-value {
+    font-size: 1.3rem;
   }
 
-  .fab {
-    display: grid;
+  .entry-title button {
+    font-size: 1.18rem;
   }
 
-  .diary-card {
-    padding: var(--sp-4);
+  .filters {
+    flex-wrap: wrap;
   }
 
-  .diary-actions .btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .danger-ghost {
-    margin-left: 0;
+  .filter-sort {
+    width: 100%;
   }
 }

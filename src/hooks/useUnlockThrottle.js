@@ -1,30 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * İstemci tarafı deneme sınırlaması (kaba kuvvet saldırılarını yavaşlatır).
+ * Kilit açma denemelerini sınırlar.
  *
- * Firebase'in kendi sunucu tarafı koruması vardır ama devreye girmesi için
- * onlarca deneme gerekir. Bu kanca ilk 5 başarısız denemeden sonra girişi
- * kademeli olarak kilitler:  30 sn -> 60 sn -> 120 sn ... (en fazla 15 dk)
+ * PBKDF2'nin 600.000 turu her denemeyi zaten ~0,3 saniyeye çıkarır; bu tek
+ * başına kaba kuvveti çok yavaşlatır. Bu kanca üstüne bir de bekleme süresi
+ * ekler: 5 yanlış denemeden sonra kilit süresi katlanarak artar.
  *
- * Not: Bu bir savunma KATMANIDIR, tek başına yeterli değildir — kararlı bir
- * saldırgan localStorage'ı temizleyebilir. Asıl koruma Firebase tarafındadır.
+ * Sayaç localStorage'da tutulur — kararlı bir saldırgan temizleyebilir, ama
+ * asıl koruma zaten anahtar türetmenin yavaşlığıdır. Bu katman, cihazı eline
+ * geçiren birinin elle parola denemesini pratik olmaktan çıkarır.
  */
 
-const STORAGE_KEY = "gunluk:login-attempts";
+const STORAGE_KEY = "gunluk:unlock-attempts";
 const FREE_ATTEMPTS = 5;
-const BASE_LOCK_MS = 30 * 1000;
-const MAX_LOCK_MS = 15 * 60 * 1000;
+const BASE_LOCK_MS = 20 * 1000;
+const MAX_LOCK_MS = 30 * 60 * 1000;
 
 function readState() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return { count: 0, until: 0 };
     const parsed = JSON.parse(raw);
-    return {
-      count: Number(parsed.count) || 0,
-      until: Number(parsed.until) || 0,
-    };
+    return { count: Number(parsed.count) || 0, until: Number(parsed.until) || 0 };
   } catch {
     return { count: 0, until: 0 };
   }
@@ -38,16 +36,13 @@ function writeState(state) {
   }
 }
 
-export default function useLoginThrottle() {
+export default function useUnlockThrottle() {
   const [state, setState] = useState(readState);
   const [secondsLeft, setSecondsLeft] = useState(0);
 
-  /* Kilit sayacını saniye saniye geriye say */
   useEffect(() => {
-    const tick = () => {
-      const remaining = Math.max(0, Math.ceil((state.until - Date.now()) / 1000));
-      setSecondsLeft(remaining);
-    };
+    const tick = () =>
+      setSecondsLeft(Math.max(0, Math.ceil((state.until - Date.now()) / 1000)));
 
     tick();
     if (state.until <= Date.now()) return undefined;
@@ -59,12 +54,10 @@ export default function useLoginThrottle() {
   const registerFailure = useCallback(() => {
     setState((current) => {
       const count = current.count + 1;
-      let until = 0;
-
-      if (count >= FREE_ATTEMPTS) {
-        const step = count - FREE_ATTEMPTS;
-        until = Date.now() + Math.min(MAX_LOCK_MS, BASE_LOCK_MS * 2 ** step);
-      }
+      const until =
+        count >= FREE_ATTEMPTS
+          ? Date.now() + Math.min(MAX_LOCK_MS, BASE_LOCK_MS * 2 ** (count - FREE_ATTEMPTS))
+          : 0;
 
       const next = { count, until };
       writeState(next);
@@ -82,7 +75,6 @@ export default function useLoginThrottle() {
     isLocked: secondsLeft > 0,
     secondsLeft,
     failedCount: state.count,
-    /** Kilitlenmeye kalan deneme sayısı (uyarı göstermek için). */
     remainingAttempts: Math.max(0, FREE_ATTEMPTS - state.count),
     registerFailure,
     reset,

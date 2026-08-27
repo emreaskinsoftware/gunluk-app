@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Taslaklar
+   ========================================================================== */
+
+.draft-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--s5);
+  border-top: 1px solid var(--rule);
+}
+
+.draft {
+  padding: var(--s5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.draft-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.draft-excerpt {
+  max-width: var(--measure);
+  margin-bottom: var(--s4);
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* Yarim kalmislik hissi: metnin sonunda soluk bir imlec */
+.draft-excerpt::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.95em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: caret 1.4s steps(1) infinite;
+}
+
+.draft-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.draft-actions .btn {
+  min-height: 32px;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 700px) {
+  .draft {
+    padding: var(--s4) 0;
+  }
+}

@@ -1,12 +1,11 @@
 {
   "name": "gunluk-app",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Kişisel, şifreli erişimli dijital günlük uygulaması — React + Firebase",
+  "description": "Uçtan uca şifreli, sunucusuz kişisel günlük — veriler yalnızca senin cihazında",
   "dependencies": {
     "date-fns": "^4.1.0",
     "dompurify": "^3.2.4",
-    "firebase": "^11.1.0",
     "react": "^18.3.1",
     "react-calendar": "^5.1.0",
     "react-dom": "^18.3.1",
@@ -25,9 +24,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "rules:deploy": "firebase deploy --only firestore:rules,firestore:indexes,storage",
-    "emulators": "firebase emulators:start"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": ["react-app", "react-app/jest"],

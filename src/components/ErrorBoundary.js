@@ -1,10 +1,8 @@
 import React from "react";
 
 /**
- * Beklenmeyen bir render hatasında beyaz ekran yerine anlamlı bir mesaj gösterir.
- *
- * Güvenlik notu: Hata detayı (yığın izi) yalnızca geliştirme modunda gösterilir.
- * Üretimde iç yapıyı sızdırmamak için gizlenir.
+ * Beklenmeyen bir render hatasında beyaz ekran yerine anlamlı mesaj gösterir.
+ * Hata ayrıntısı yalnızca geliştirme modunda görünür.
  */
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -25,15 +23,13 @@ export default class ErrorBoundary extends React.Component {
     if (!error) return this.props.children;
 
     return (
-      <div className="shell">
-        <div className="card empty-state" style={{ marginTop: "12vh" }}>
-          <span className="empty-icon" aria-hidden="true">
-            🛠️
-          </span>
+      <div className="sheet sheet-narrow">
+        <div className="empty" style={{ marginTop: "14vh" }}>
+          <span className="label">Hata</span>
           <h3>Bir şeyler ters gitti</h3>
           <p>
-            Uygulama beklenmedik bir hatayla karşılaştı. Sayfayı yenilemek
-            genellikle sorunu çözer.
+            Uygulama beklenmedik bir durumla karşılaştı. Günlüklerin cihazında
+            güvende — sayfayı yenilemek genellikle yeterli olur.
           </p>
 
           {process.env.NODE_ENV === "development" && (
@@ -41,9 +37,11 @@ export default class ErrorBoundary extends React.Component {
               style={{
                 maxWidth: "100%",
                 overflowX: "auto",
-                fontSize: "0.78rem",
-                color: "var(--danger-500)",
                 textAlign: "left",
+                fontFamily: "var(--mono)",
+                fontSize: "0.75rem",
+                color: "var(--danger)",
+                marginBottom: "var(--s5)",
               }}
             >
               {String(error?.message || error)}

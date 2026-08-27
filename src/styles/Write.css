@@ -1,0 +1,351 @@
+/* ==========================================================================
+   Yazma ekrani — sol tarafta sayfa, sagda kenar notlari
+   ========================================================================== */
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 244px;
+  gap: var(--s7);
+  align-items: start;
+}
+
+/* --- Editor --- */
+.editor {
+  min-width: 0;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: ink-rise var(--slow) var(--ease) both;
+}
+
+/* Arac cubugu: sayfanin ustune yapisir ama sabit degil, kutunun icinde kalir.
+   (Eski surumde position:fixed idi ve diger dugmelerin uzerine biniyordu.) */
+.editor .ql-toolbar.ql-snow {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: var(--s2) var(--s3);
+  background: var(--paper-sunken);
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  font-family: var(--sans);
+}
+
+.editor .ql-container.ql-snow {
+  border: none;
+  font-family: var(--serif);
+  font-size: 1.06rem;
+}
+
+.editor .ql-editor {
+  min-height: 58vh;
+  max-width: none;
+  padding: var(--s7) var(--s7) var(--s6);
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+/* Yazi olcusu okunabilir kalsin */
+.editor .ql-editor > * {
+  max-width: var(--measure);
+}
+
+.editor .ql-editor.ql-blank::before {
+  left: var(--s7);
+  right: var(--s7);
+  font-family: var(--serif);
+  font-style: normal;
+  color: var(--ink-faint);
+}
+
+/* --- Quill arac cubugu ogeleri --- */
+.ql-snow .ql-stroke {
+  stroke: var(--ink-muted);
+  stroke-width: 1.6;
+}
+.ql-snow .ql-fill,
+.ql-snow .ql-stroke.ql-fill {
+  fill: var(--ink-muted);
+}
+.ql-snow .ql-picker {
+  color: var(--ink-muted);
+  font-family: var(--sans);
+}
+
+.ql-snow.ql-toolbar button,
+.ql-snow .ql-toolbar button {
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 2px;
+  transition: background-color var(--fast) var(--ease);
+}
+
+.ql-snow.ql-toolbar button:hover {
+  background: var(--paper-hover);
+}
+
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke,
+.ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke {
+  stroke: var(--accent);
+}
+
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: var(--accent);
+}
+
+.ql-snow.ql-toolbar button.ql-active {
+  background: var(--accent-wash);
+}
+
+.ql-snow.ql-toolbar .ql-picker-label:hover,
+.ql-snow.ql-toolbar .ql-picker-label.ql-active,
+.ql-snow.ql-toolbar .ql-picker-item.ql-selected {
+  color: var(--accent);
+}
+
+.ql-snow .ql-picker-options {
+  padding: var(--s2);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-strong) !important;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 24px -18px rgba(26, 22, 19, 0.5);
+}
+
+.ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  border-color: transparent;
+}
+
+/* Bag ekleme kutusu */
+.ql-snow .ql-tooltip {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 24px -18px rgba(26, 22, 19, 0.5);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+  padding: 4px 6px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+.ql-snow .ql-tooltip a.ql-action,
+.ql-snow .ql-tooltip a.ql-remove {
+  color: var(--accent);
+}
+
+/* --- Editor icerik bicimleri --- */
+.editor .ql-editor h1,
+.editor .ql-editor h2,
+.editor .ql-editor h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 1.4em;
+}
+
+.editor .ql-editor blockquote {
+  padding-left: var(--s4);
+  border-left: 2px solid var(--accent-line);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.editor .ql-editor pre.ql-syntax {
+  padding: var(--s3) var(--s4);
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  color: var(--ink);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.editor .ql-editor a {
+  color: var(--accent);
+}
+
+/* --- Durum satiri --- */
+.editor-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s2) var(--s5);
+  background: var(--paper-sunken);
+  border-top: 1px solid var(--rule);
+}
+
+.editor-status .field-error {
+  margin-left: auto;
+}
+
+.unsaved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--warning);
+}
+
+.unsaved::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: caret 1.6s steps(1) infinite;
+}
+
+/* --- Ilerleme cubugu --- */
+.progress {
+  position: relative;
+  height: 26px;
+  margin-bottom: var(--s4);
+  background: var(--paper-sunken);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: ink-rise 200ms var(--ease) both;
+}
+
+.progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-wash);
+  border-right: 1px solid var(--accent);
+  transition: width 200ms var(--ease);
+}
+
+.progress > em {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+/* --- Kenar notlari --- */
+.margin-notes {
+  position: sticky;
+  top: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+
+.margin-block {
+  animation: ink-rise var(--slow) var(--ease) both;
+}
+
+.margin-block .section-head {
+  margin-bottom: var(--s3);
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.attach-btn {
+  border-style: dashed;
+}
+
+.attach-btn:hover:not(:disabled) {
+  border-style: dashed;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.side-note {
+  margin-top: var(--s3);
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+/* --- Ek listesi --- */
+.attachments {
+  display: flex;
+  flex-direction: column;
+  margin: var(--s4) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.attachment-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.attachment-info strong {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-info .meta {
+  font-size: 0.68rem;
+}
+
+/* --------------------------------------------------------------------------
+   Kucuk ekran
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .desk {
+    grid-template-columns: 1fr;
+    gap: var(--s6);
+  }
+
+  .margin-notes {
+    position: static;
+    padding-top: var(--s5);
+    border-top: 1px solid var(--rule);
+  }
+}
+
+@media (max-width: 700px) {
+  .editor .ql-editor {
+    min-height: 46vh;
+    padding: var(--s5) var(--s4);
+  }
+
+  .editor .ql-editor.ql-blank::before {
+    left: var(--s4);
+    right: var(--s4);
+  }
+}
