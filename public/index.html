@@ -25,8 +25,14 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="robots" content="noindex, nofollow" />
 
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      Simgeler scripts/make-icons.js ile üretilir. SVG'yi destekleyen
+      tarayıcılar onu tercih eder (her ölçekte keskin); .ico eski
+      tarayıcılar için yedektir.
+    -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="any" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
     <!--

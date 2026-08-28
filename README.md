@@ -323,6 +323,18 @@ Gitmiyor. Ağ isteği yapan hiçbir kod yok. Tarayıcının Network sekmesini a�
 tutup günlük yazabilirsin — uygulama dosyaları ve yazı tipleri dışında istek
 görmezsin.
 
+**İndirdiğim dosyalar şifreli mi?**
+İki farklı indirme var, ikisi bilerek farklı:
+
+| Nereden | Dosya | Şifreli mi? |
+|---|---|---|
+| Ayarlar → **Şifreli yedek indir** | `gunluk-yedek-….json` | ✅ Evet — AES-256-GCM, aynı parolayla açılır |
+| Günlük listesi / okuma → **İndir** | `27 Ağustos 2026….txt` | ❌ Hayır — düz metin |
+
+`.txt` bilinçli olarak şifresizdir; amacı günlüğü uygulama dışında okuyabilmen.
+Yedekleme için onu değil, Ayarlar'daki `.json` dosyasını kullan. Uygulama
+`.txt` indirdiğinde bunu ayrıca hatırlatır.
+
 **Parolamı değiştirebilir miyim?**
 Evet. Ayarlar → Parola. Tüm kayıtlar yeni anahtarla baştan şifrelenir.
 *Eski yedek dosyaların eski parolayla açılmaya devam eder.*

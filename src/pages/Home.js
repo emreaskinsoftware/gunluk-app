@@ -144,6 +144,13 @@ export default function Home() {
     }
   };
 
+  /**
+   * Günlüğü düz metin (.txt) olarak indirir.
+   *
+   * DİKKAT: Bu dosya ŞİFRESİZDİR — amacı zaten uygulama dışında okunabilmesi.
+   * Şifreli olan, Ayarlar sayfasındaki yedek dosyasıdır (.json). Kullanıcının
+   * ikisini karıştırmaması için indirdikten sonra açıkça uyarıyoruz.
+   */
   const download = (entry) => {
     const title = formatLongDate(entry.createdAt);
     const attachments = (entry.files || []).map((file, i) => `${i + 1}. ${file.name}`).join("\n");
@@ -166,6 +173,8 @@ export default function Home() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+
+    toast.info("Düz metin olarak indirildi — bu dosya şifreli değildir.");
   };
 
   /* ---- Görünüm ---- */
@@ -336,6 +345,7 @@ export default function Home() {
                         type="button"
                         className="btn btn-quiet"
                         onClick={() => download(entry)}
+                        title="Düz metin (.txt) olarak indir — şifresiz"
                       >
                         <FiDownload size={13} aria-hidden="true" />
                         İndir

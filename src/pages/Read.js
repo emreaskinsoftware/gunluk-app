@@ -121,6 +121,10 @@ export default function Read() {
     }
   };
 
+  /**
+   * DİKKAT: Bu .txt dosyası ŞİFRESİZDİR — amacı uygulama dışında okunabilmesi.
+   * Şifreli olan, Ayarlar sayfasındaki yedek dosyasıdır (.json).
+   */
   const downloadText = () => {
     const title = formatLongDate(entry.createdAt);
     const text =
@@ -137,6 +141,8 @@ export default function Read() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+
+    toast.info("Düz metin olarak indirildi — bu dosya şifreli değildir.");
   };
 
   if (loading) return <PageLoader label="Çözülüyor" />;
@@ -168,7 +174,12 @@ export default function Read() {
         showLock={false}
         showSettings={false}
       >
-        <button type="button" className="btn btn-quiet" onClick={downloadText}>
+        <button
+          type="button"
+          className="btn btn-quiet"
+          onClick={downloadText}
+          title="Düz metin (.txt) olarak indir — şifresiz"
+        >
           <FiDownload size={15} aria-hidden="true" />
           <span className="btn-text">İndir</span>
         </button>

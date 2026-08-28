@@ -8,6 +8,7 @@ import {
   FiTrash2,
   FiHardDrive,
   FiCheck,
+  FiAlertTriangle,
 } from "react-icons/fi";
 
 import Masthead from "../components/Masthead";
@@ -232,6 +233,16 @@ export default function Settings() {
           Yedek dosyası da şifrelidir; aynı parolayla açılır. Cihaz değiştirirken
           ya da tarayıcı verisi silindiğinde tek kurtarma yolun budur.
         </p>
+
+        <div className="note note-warning" style={{ marginBottom: "var(--s4)" }}>
+          <FiAlertTriangle size={16} aria-hidden="true" />
+          <span>
+            Bunu, günlük listesindeki <strong>İndir</strong> düğmesiyle
+            karıştırma. Oradaki <span className="num">.txt</span> dosyası
+            okunabilir olsun diye <strong>şifresizdir</strong>. Buradaki{" "}
+            <span className="num">.json</span> yedeği ise şifrelidir.
+          </span>
+        </div>
 
         <button
           type="button"
