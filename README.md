@@ -105,8 +105,13 @@ tek şey tarih ve puan — bunlar takvimi ve sıralamayı çözmeden yapabilmek 
 ### Ek katmanlar
 
 - **Content-Security-Policy** `script-src 'self'` kadar sıkı (satır içi betik
-  yok — bkz. `.env.production`), `connect-src 'self'`, `frame-ancestors 'none'`
-- `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, HSTS
+  yok — bkz. `.env.production`), `connect-src 'self'`. Hem HTTP başlığı
+  (Vercel) hem meta etiketi (GitHub Pages) olarak uygulanır.
+- **Clickjacking**: `frame-ancestors` ve `X-Frame-Options` yalnızca HTTP
+  başlığı olarak çalıştığı ve GitHub Pages başlık eklemeye izin vermediği
+  için `src/index.js` içinde bir çerçeve denetimi var: uygulama bir iframe
+  içindeyse hiç açılmıyor.
+- `nosniff`, `Referrer-Policy: no-referrer`, HSTS (barındırma destekliyorsa)
 - Dosya yüklemede MIME tipi **ve** uzantı birlikte denetlenir
 - Dosya adlarında yalnızca harf/rakam/güvenli noktalama kalır (yol geçişi, kontrol karakterleri elenir)
 - `noindex, nofollow` — kişisel içerik arama motorlarına düşmez
@@ -150,22 +155,68 @@ Dürüst olmak gerekirse:
 
 ## Yayına alma
 
-Statik bir site olduğu için her yerde ücretsiz barınır.
+Statik bir site olduğu için her yerde ücretsiz barınır. Ortam değişkeni
+girmene gerek yok — uygulamanın hiç yok.
+
+> ### ⚠ Önce alan adına karar ver
+>
+> Kasa **tarayıcının origin'ine** bağlıdır: `gunluk.alanadin.com` ile
+> `emreaskinsoftware.github.io` iki ayrı depo alanıdır ve veriler birinden
+> diğerine geçmez. Test için birini kullanıp sonra taşınırsan günlükler
+> "kaybolmaz", sadece o adreste görünmez — taşımak için **yedek al →
+> geri yükle** yapman gerekir. En kolayı: baştan kullanacağın adresi seç.
+
+### GitHub Pages + kendi alt alan adın
+
+Depo herkese açıksa Actions dakikaları ve barındırma tamamen ücretsizdir.
+
+**1. Pages'i aç**
+Depo → **Settings → Pages → Build and deployment → Source: GitHub Actions**
+
+**2. DNS kaydını ekle**
+Alan adı sağlayıcında bir CNAME kaydı:
+
+| Tür | Ad | Değer |
+|---|---|---|
+| `CNAME` | `gunluk` | `emreaskinsoftware.github.io` |
+
+**3. Alan adını GitHub'a bildir**
+Settings → Pages → **Custom domain** → `gunluk.alanadin.com` → Save.
+Sertifika hazırlanınca (birkaç dakika) **Enforce HTTPS** kutusunu işaretle.
+
+**4. Bitti**
+`main` dalına her gönderimde `.github/workflows/deploy.yml` derleyip yayınlar.
+
+#### GitHub Pages'e özel iki ayar (ikisi de hazır)
+
+| Sorun | Çözüm |
+|---|---|
+| Pages'te yönlendirme kuralı tanımlanamaz; `/yaz` veya `/gunluk/<id>` adresine doğrudan gidince 404 gelirdi | `npm run build` sonrası `scripts/spa-fallback.js` otomatik olarak `404.html` kopyası üretiyor. Pages bunu bilinmeyen adreslerde servis ediyor ve **adres çubuğunu değiştirmiyor**, uygulama doğru sayfayı açıyor. |
+| Pages özel HTTP başlığı gönderemez (CSP, X-Frame-Options…) | CSP `index.html` içinde **meta etiketi** olarak gömülü (`.env.production`). Meta etiketinde çalışmayan `frame-ancestors` yerine `src/index.js` içinde çerçeve denetimi var. |
 
 ### Vercel
 
-Depoyu bağla, hazır. `vercel.json` şunları getirir: SPA yönlendirmesi,
-güvenlik başlıkları (CSP dahil), statik dosyalar için uzun önbellek.
-Ortam değişkeni girmene gerek yok — uygulamanın hiç yok.
+Depoyu bağla, hazır. `vercel.json` başlıkları HTTP düzeyinde gönderir; bu
+yüzden Vercel'de koruma bir tık daha güçlüdür:
 
-### GitHub Pages / Netlify / herhangi bir statik sunucu
+| | GitHub Pages | Vercel |
+|---|---|---|
+| Content-Security-Policy | ✅ meta etiketi | ✅ HTTP başlığı |
+| `frame-ancestors` / `X-Frame-Options` | ⚠ JS çerçeve denetimi | ✅ başlık |
+| `Permissions-Policy` | ❌ | ✅ |
+| `Strict-Transport-Security` | Pages kendi HSTS'ini gönderir | ✅ `preload` ile |
+| SPA yönlendirmesi | `404.html` (durum kodu 404) | gerçek rewrite (200) |
+
+Pratikte ikisi de bu uygulama için yeterli — fark, kuşak ve kemer meselesi.
+
+### Netlify / Cloudflare Pages / herhangi bir statik sunucu
 
 ```bash
 npm run build
 ```
 
 `build/` klasörünü yayınla. Tek gereklilik: bilinmeyen adresleri
-`index.html`'e yönlendiren bir kural (SPA yönlendirmesi).
+`index.html`'e yönlendiren bir kural (ya da üretilen `404.html` yedeği).
 
 ### Sadece kendi bilgisayarında
 
@@ -201,6 +252,11 @@ src/
 ├── styles/
 │   └── theme.css        Tüm renk / ölçü / hareket değerleri
 └── utils/               sanitize · validation · format · errors
+
+scripts/spa-fallback.js          build/404.html üretir (GitHub Pages)
+.github/workflows/deploy.yml     main'e gönderimde Pages'e yayınlar
+.env.production / .env.development   CSP değerleri + derleme ayarları
+vercel.json                      Vercel kullanırsan HTTP başlıkları
 ```
 
 **Bağımlılıklar (10 adet):** react, react-dom, react-router-dom,

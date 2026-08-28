@@ -1,0 +1,56 @@
+name: GitHub Pages'e yayınla
+
+# main dalına her gönderimde derleyip yayınlar.
+# Depo herkese açık olduğu için Actions dakikaları ücretsizdir.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Actions sekmesinden elle de çalıştırılabilir
+
+# Yayınlama için gereken en dar izin kümesi
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Aynı anda tek yayın; üst üste gelen gönderimlerde eskisi iptal edilir
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # package-lock.json'a birebir sadık kurulum
+      - run: npm ci
+
+      # CI=true: uyarılar hata sayılır, sessizce bozuk yayın çıkmaz.
+      # "postbuild" adımı 404.html kopyasını da üretir (SPA yönlendirmesi).
+      - run: npm run build
+        env:
+          CI: true
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+  yayinla:
+    needs: derle
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

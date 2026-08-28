@@ -10,6 +10,14 @@
       content="Uçtan uca şifreli kişisel günlük. Hesap yok, sunucu yok — yazdıkların cihazından çıkmaz."
     />
 
+    <!--
+      Content-Security-Policy meta etiketi olarak da gömülür. Böylece
+      GitHub Pages gibi özel HTTP başlığı eklenemeyen barındırma
+      hizmetlerinde de koruma çalışır. Değer .env.production /
+      .env.development dosyalarından gelir.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="%REACT_APP_CSP%" />
+
     <meta name="theme-color" content="#faf7f0" />
     <meta name="color-scheme" content="light dark" />
 
