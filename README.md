@@ -173,6 +173,11 @@ Depo herkese açıksa Actions dakikaları ve barındırma tamamen ücretsizdir.
 **1. Pages'i aç**
 Depo → **Settings → Pages → Build and deployment → Source: GitHub Actions**
 
+> Burası **"Deploy from a branch" kalırsa** GitHub'ın kendi Jekyll derleyicisi
+> de her gönderimde çalışır ve deponun kökünü yayınlamaya çalışır. İki hat
+> yarışır; Jekyll kazanırsa sitede uygulama yerine README görünür.
+> Kaynağı "GitHub Actions" yapmak eski hattı tamamen kapatır.
+
 **2. DNS kaydını ekle**
 Alan adı sağlayıcında bir CNAME kaydı:
 
@@ -183,6 +188,13 @@ Alan adı sağlayıcında bir CNAME kaydı:
 **3. Alan adını GitHub'a bildir**
 Settings → Pages → **Custom domain** → `gunluk.alanadin.com` → Save.
 Sertifika hazırlanınca (birkaç dakika) **Enforce HTTPS** kutusunu işaretle.
+
+> **Enforce HTTPS isteğe bağlı değil.** Tarayıcılar Web Crypto'yu yalnızca
+> güvenli bağlamlarda (`https://` veya `localhost`) çalıştırır. Kutu
+> işaretlenmezse `http://` ile gelen ziyaretçide `crypto.subtle` tanımsız
+> olur ve uygulama açılmaz. Ayrıca şifreleme yapan bir sayfanın düz HTTP
+> üzerinden servis edilmesi, aradaki birinin JavaScript'i değiştirmesine
+> kapı açar.
 
 **4. Bitti**
 `main` dalına her gönderimde `.github/workflows/deploy.yml` derleyip yayınlar.
